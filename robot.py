@@ -12,6 +12,7 @@ class Robot(object):
         self.location = [0, 0]
         self.heading = 'up'
         self.maze_dim = maze_dim
+	print("INIT WAS CALLED ON ROBOT")
 
     def next_move(self, sensors):
         '''
@@ -35,7 +36,29 @@ class Robot(object):
         the tester to end the run and return the robot to the start.
         '''
 
-        rotation = 0
-        movement = 0
+	# We're going to manually control the robot for now. 
+
+	print("Sensor data: " + 
+			str(sensors[0]) + " " +
+			str(sensors[1]) + " " + 
+			str(sensors[2]))
+
+	user_rotation = raw_input("Rotate (L/N/R): ")
+	user_movement = raw_input("Movement [-3 <= m <= 3]: ")
+
+	rotation_int = 0
+
+	if(user_rotation == "L"):
+		rotation_int = -90
+	elif(user_rotation == "N"):
+		rotation_int = 0
+	elif(user_rotation == "R"):
+		rotation_int = 90
+	else:
+		print("Invalid rotation. Passing 0.")
+
+
+        rotation = rotation_int
+        movement = int(user_movement)
 
         return rotation, movement

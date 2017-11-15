@@ -1,5 +1,41 @@
 import numpy as np
 
+class MazeTile(object):
+
+	# Start off every Tile as black for init. 
+	# Since the Tile is black, its map to other tiles is empty. 
+	# Map to other tiles: 
+	#	map key is a tuple (N/E/S/W)
+	#	map value is ref to other square or None if it hits wall/edge. 
+	def __init__(self, x_coord, y_coord,  ):
+		# where am I? 
+		self.x_coord = x_coord
+		self.y_coord = y_coord
+		self.color = "B"
+		self.transition = {}
+
+	# The key is the tuple: (N/E/S/W), steps)	
+	# The value is the obj reference we get from the tiles Table
+	def add_transition(self, pos, tile):
+		""" TODO Check to see if the key is already there. 
+		If it is, return 1, or something to signify it. (later) 
+		"""
+		self.transition[pos] = tile
+
+	def set_white(self):
+		self.color = "W"
+
+	def set_grey(self):
+		self.color = "G"
+
+	def get_color(self):
+		return self.color
+
+	def get_transitions(self):
+		return self.transitions
+
+	
+
 class Robot(object):
     def __init__(self, maze_dim):
         '''
@@ -12,7 +48,6 @@ class Robot(object):
         self.location = [0, 0]
         self.heading = 'up'
         self.maze_dim = maze_dim
-	print("INIT WAS CALLED ON ROBOT")
 
     def next_move(self, sensors):
         '''
@@ -57,8 +92,15 @@ class Robot(object):
 	else:
 		print("Invalid rotation. Passing 0.")
 
+	# We're going to build a map of the maze. 
+	# tiles: 
+	#	-black	(unseen)
+	#	-grey 	(we "saw" it with sensors)
+	#	-white	(we've fully discovered it.)
+
 
         rotation = rotation_int
         movement = int(user_movement)
+	
 
         return rotation, movement

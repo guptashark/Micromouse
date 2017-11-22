@@ -33,8 +33,36 @@ class MazeGraph(object):
 			i = i + 1
 			j = 0
 
-				
-	
+	# just get the colors from all the thingies and print them. 
+	def print_maze_view(self):
+		# [0, 11], ... [11, 11]
+		# ...
+		# [0, 0], ...  [11, 0]
+
+		# first row from top: 
+		# i = 0, j = 11
+		# i = 1, j = 11
+		# i = 2, j = 11
+		# ...
+
+		# second row from top: 
+		# i = 0, j = 10
+		# etc. 
+
+		i = 0
+		j = self.width - 1
+
+		to_print_str = ""
+		while(j >= 0 ):
+			while(i < self.width):
+				to_print_str = to_print_str + self.maze[self.width * i + j].get_color()
+				i = i + 1
+
+			j = j - 1
+			i = 0
+			print(to_print_str)
+			to_print_str = ""
+		
 
 class MazeTile(object):
 
@@ -73,6 +101,7 @@ class MazeTile(object):
 	def print_info(self, verbose_level):
 		
 		print("[" + str(self.x_coord) + ", " + str(self.y_coord) + "]")
+
 
 class Robot(object):
 	def __init__(self, maze_dim):
@@ -149,7 +178,7 @@ class Robot(object):
         	'''
 
 		# We're going to manually control the robot for now. 
-		self.maze_graph.print_info(1)
+		self.maze_graph.print_maze_view()
 
 		print("Sensor data: " + 
 			str(sensors[0]) + " " +

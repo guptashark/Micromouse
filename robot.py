@@ -111,6 +111,35 @@ class Robot(object):
 		self.maze_dim = maze_dim
 		self.maze_graph = MazeGraph(maze_dim)
 
+	# puts None for the direction opposite the robot. 
+	def normalize_sensor_data(self, sensor_data, current_heading): 
+		# nd stands for normalized data, sd for sensor data
+		nd = [None, None, None, None]
+		sd = sensor_data
+		if(current_heading == "up"):
+			nd[0] = sd[1]
+			nd[1] = sd[2]
+			nd[2] = None
+			nd[3] = sd[0]
+		elif(current_heading == "right"):
+			nd[0] = sd[0]
+			nd[1] = sd[1]
+			nd[2] = sd[2]
+			nd[3] = None
+		elif(current_heading == "down"):
+			nd[0] = None
+			nd[1] = sd[0]
+			nd[2] = sd[1]
+			nd[3] = sd[2]
+		else:
+			nd[0] = sd[2]
+			nd[1] = None
+			nd[2] = sd[0]
+			nd[3] = sd[1]
+
+		return nd
+
+
 	def update_heading(self, current_heading, rotation):
 		if(current_heading == "up"):
 			if(rotation == 90):
@@ -185,10 +214,14 @@ class Robot(object):
 			str(sensors[1]) + " " + 
 			str(sensors[2]))
 
+		# we need to normalize sensor data to N, E, S, W so that
+		# we can then update the mazeview. 
+
+		normalized_sensor_data = self.normalize_sensor_data(sensors, self.heading)
+		print("Normalized sensor data: " + str(normalized_sensor_data))
+
 		print("Current position: " + str(self.location))
 		print("Current heading: " + self.heading)
-
-
 
 		user_rotation = raw_input("Rotate (L/N/R): ")
 		user_movement = raw_input("Movement [-3 <= m <= 3]: ")

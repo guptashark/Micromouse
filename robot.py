@@ -1,5 +1,41 @@
 import numpy as np
 
+# The data structure that holds all the tiles
+class MazeGraph(object):
+	def __init__(self, width):
+		self.width = width
+		# We can index with: 
+		# row * width + column
+		
+		self.maze = []
+
+		i = 0
+		j = 0
+		while(i < self.width):
+
+			while(j < self.width):
+				self.maze.append(MazeTile(i, j))
+				j = j + 1
+
+			i = i + 1
+			j = 0
+
+	# we can change the level of info we get with verbose level 0 - whatever
+	def print_info(self, verbose_level):
+		i = 0
+		j = 0
+		while(i < self.width):
+
+			while(j < self.width):
+				self.maze[i * self.width + j].print_info(verbose_level)
+				j = j + 1
+
+			i = i + 1
+			j = 0
+
+				
+	
+
 class MazeTile(object):
 
 	# Start off every Tile as black for init. 
@@ -7,7 +43,7 @@ class MazeTile(object):
 	# Map to other tiles: 
 	#	map key is a tuple (N/E/S/W)
 	#	map value is ref to other square or None if it hits wall/edge. 
-	def __init__(self, x_coord, y_coord,  ):
+	def __init__(self, x_coord, y_coord):
 		# where am I? 
 		self.x_coord = x_coord
 		self.y_coord = y_coord
@@ -33,7 +69,10 @@ class MazeTile(object):
 
 	def get_transitions(self):
 		return self.transitions
-	
+
+	def print_info(self, verbose_level):
+		
+		print("[" + str(self.x_coord) + ", " + str(self.y_coord) + "]")
 
 class Robot(object):
 	def __init__(self, maze_dim):
@@ -41,6 +80,7 @@ class Robot(object):
 		self.location = [0, 0]
 		self.heading = 'up'
 		self.maze_dim = maze_dim
+		self.maze_graph = MazeGraph(maze_dim)
 
 	def update_heading(self, current_heading, rotation):
 		if(current_heading == "up"):
@@ -109,6 +149,8 @@ class Robot(object):
         	'''
 
 		# We're going to manually control the robot for now. 
+		self.maze_graph.print_info(1)
+
 		print("Sensor data: " + 
 			str(sensors[0]) + " " +
 			str(sensors[1]) + " " + 
@@ -116,6 +158,8 @@ class Robot(object):
 
 		print("Current position: " + str(self.location))
 		print("Current heading: " + self.heading)
+
+
 
 		user_rotation = raw_input("Rotate (L/N/R): ")
 		user_movement = raw_input("Movement [-3 <= m <= 3]: ")
@@ -136,8 +180,6 @@ class Robot(object):
 		#	-black	(unseen)
 		#	-grey 	(we "saw" it with sensors)
 		#	-white	(we've fully discovered it.)
-
-
 		rotation = rotation_int
 		movement = int(user_movement)
 

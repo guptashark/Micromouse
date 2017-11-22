@@ -33,74 +33,115 @@ class MazeTile(object):
 
 	def get_transitions(self):
 		return self.transitions
-
 	
 
 class Robot(object):
-    def __init__(self, maze_dim):
-        '''
-        Use the initialization function to set up attributes that your robot
-        will use to learn and navigate the maze. Some initial attributes are
-        provided based on common information, including the size of the maze
-        the robot is placed in.
-        '''
+	def __init__(self, maze_dim):
 
-        self.location = [0, 0]
-        self.heading = 'up'
-        self.maze_dim = maze_dim
+		self.location = [0, 0]
+		self.heading = 'up'
+		self.maze_dim = maze_dim
 
-    def next_move(self, sensors):
-        '''
-        Use this function to determine the next move the robot should make,
-        based on the input from the sensors after its previous move. Sensor
-        inputs are a list of three distances from the robot's left, front, and
-        right-facing sensors, in that order.
+	def update_heading(self, current_heading, rotation):
+		if(current_heading == "up"):
+			if(rotation == 90):
+				return "right"
+			elif(rotation == -90):
+				return "left"
+			else:
+				return "up"
 
-        Outputs should be a tuple of two values. The first value indicates
-        robot rotation (if any), as a number: 0 for no rotation, +90 for a
-        90-degree rotation clockwise, and -90 for a 90-degree rotation
-        counterclockwise. Other values will result in no rotation. The second
-        value indicates robot movement, and the robot will attempt to move the
-        number of indicated squares: a positive number indicates forwards
-        movement, while a negative number indicates backwards movement. The
-        robot may move a maximum of three units per turn. Any excess movement
-        is ignored.
+		elif(current_heading == "right"):
+			if(rotation == 90):
+				return "down"
+			elif(rotation == -90):
+				return "up"
+			else:
+				return "right"
+		
+		elif(current_heading == "down"):
+			if(rotation == 90): 
+				return "left"
+			elif(rotation == -90):
+				return "right"
+			else:
+				return "down"
+		else:
+			if(rotation == 90):
+				return "up"
+			elif(rotation == -90):
+				return "down"
+			else:
+				return "left"
 
-        If the robot wants to end a run (e.g. during the first training run in
-        the maze) then returing the tuple ('Reset', 'Reset') will indicate to
-        the tester to end the run and return the robot to the start.
-        '''
+	def update_location(self, current_location, current_heading, num_steps):
+		if(current_heading == "up"):
+			current_location[1] = current_location[1] + num_steps
+		elif(current_heading == "right"):
+			current_location[0] = current_location[0] + num_steps
+		elif(current_heading == "down"):
+			current_location[1] = current_location[1] - num_steps
+		elif(current_heading == "left"):
+			current_location[0] = current_location[0] - num_steps
 
-	# We're going to manually control the robot for now. 
+		return current_location
 
-	print("Sensor data: " + 
+	def next_move(self, sensors):
+        	'''
+        	Use this function to determine the next move the robot should make,
+        	based on the input from the sensors after its previous move. Sensor
+        	inputs are a list of three distances from the robot's left, front, and
+        	right-facing sensors, in that order.
+
+        	Outputs should be a tuple of two values. The first value indicates
+        	robot rotation (if any), as a number: 0 for no rotation, +90 for a
+        	90-degree rotation clockwise, and -90 for a 90-degree rotation
+        	counterclockwise. Other values will result in no rotation. The second
+        	value indicates robot movement, and the robot will attempt to move the
+        	number of indicated squares: a positive number indicates forwards
+        	movement, while a negative number indicates backwards movement. The
+        	robot may move a maximum of three units per turn. Any excess movement
+        	is ignored.
+
+        	If the robot wants to end a run (e.g. during the first training run in
+        	the maze) then returing the tuple ('Reset', 'Reset') will indicate to
+        	the tester to end the run and return the robot to the start.
+        	'''
+
+		# We're going to manually control the robot for now. 
+		print("Sensor data: " + 
 			str(sensors[0]) + " " +
 			str(sensors[1]) + " " + 
 			str(sensors[2]))
 
-	user_rotation = raw_input("Rotate (L/N/R): ")
-	user_movement = raw_input("Movement [-3 <= m <= 3]: ")
+		print("Current position: " + str(self.location))
+		print("Current heading: " + self.heading)
 
-	rotation_int = 0
+		user_rotation = raw_input("Rotate (L/N/R): ")
+		user_movement = raw_input("Movement [-3 <= m <= 3]: ")
 
-	if(user_rotation == "L"):
-		rotation_int = -90
-	elif(user_rotation == "N"):
 		rotation_int = 0
-	elif(user_rotation == "R"):
-		rotation_int = 90
-	else:
-		print("Invalid rotation. Passing 0.")
 
-	# We're going to build a map of the maze. 
-	# tiles: 
-	#	-black	(unseen)
-	#	-grey 	(we "saw" it with sensors)
-	#	-white	(we've fully discovered it.)
+		if(user_rotation == "L"):
+			rotation_int = -90
+		elif(user_rotation == "N"):
+			rotation_int = 0
+		elif(user_rotation == "R"):
+			rotation_int = 90
+		else:
+			print("Invalid rotation. Passing 0.")
+
+		# We're going to build a map of the maze. 
+		# tiles: 
+		#	-black	(unseen)
+		#	-grey 	(we "saw" it with sensors)
+		#	-white	(we've fully discovered it.)
 
 
-        rotation = rotation_int
-        movement = int(user_movement)
-	
+		rotation = rotation_int
+		movement = int(user_movement)
 
-        return rotation, movement
+		self.heading = self.update_heading(self.heading, rotation)
+		self.location = self.update_location(self.location, self.heading, movement)
+
+		return rotation, movement

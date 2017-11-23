@@ -6,19 +6,21 @@ class MazeGraph(object):
 		self.width = width
 		# We can index with: 
 		# row * width + column
-		
-		self.maze = []
+	
+		# honestly... a dictionary works better, and is probably just as fast. 	
+		# we can change implementations later. 
+		self.maze = {}
 
-		i = 0
-		j = 0
-		while(i < self.width):
+		x = 0
+		y = 0
+		while(x < self.width):
 
-			while(j < self.width):
-				self.maze.append(MazeTile(i, j))
-				j = j + 1
+			while(y < self.width):
+				self.maze[(x, y)] = MazeTile(x, y)
+				y = y + 1
 
-			i = i + 1
-			j = 0
+			x = x  + 1
+			y = 0
 
 	# we can change the level of info we get with verbose level 0 - whatever
 	def print_info(self, verbose_level):
@@ -49,23 +51,28 @@ class MazeGraph(object):
 		# i = 0, j = 10
 		# etc. 
 
-		i = 0
-		j = self.width - 1
+		y = self.width - 1
+		x = 0
 
-		to_print_str = ""
-		while(j >= 0 ):
-			while(i < self.width):
-				to_print_str = to_print_str + self.maze[self.width * i + j].get_color()
-				i = i + 1
+		while(y >= 0 ):
 
-			j = j - 1
-			i = 0
-			print(to_print_str)
 			to_print_str = ""
-		
+
+			while(x < self.width):
+				to_print_str = to_print_str + self.maze[(x, y)].get_color()
+				x = x + 1
+
+			y = y - 1
+			x = 0
+
+			print(to_print_str)
+			
+	def mark_seen(self, x_coord, y_coord):
+		self.maze[(x_coord, y_coord)].set_grey()
+
+
 
 class MazeTile(object):
-
 	# Start off every Tile as black for init. 
 	# Since the Tile is black, its map to other tiles is empty. 
 	# Map to other tiles: 
@@ -184,6 +191,43 @@ class Robot(object):
 
 		return current_location
 
+	# Here we figure out where all we can see using normalized sensor values
+	# and mark them accordingly as seen (and later fully computed)
+	def update_maze_map(self, normalized_sensors):
+		
+		# current space
+		x = self.location[0]
+		y = self.location[1]
+
+		# seen north
+		if(normalized_sensors[0] != None):
+			i = 1
+			while(i <= normalized_sensors[0]):
+				self.maze_graph.mark_seen(x, y + i)
+				i = i + 1
+
+		# seen east
+		if(normalized_sensors[1] != None):
+			i = 1
+			while(i <= normalized_sensors[1]):
+				self.maze_graph.mark_seen(x + i, y)
+				i = i + 1
+
+		# seen south
+		if(normalized_sensors[2] != None):
+			i = 1
+			while(i <= normalized_sensors[2]):
+				self.maze_graph.mark_seen(x, y - i)
+				i = i + 1
+
+		# seen west
+		if(normalized_sensors[3] != None):
+			i = 1
+			while(i <= normalized_sensors[3]):
+				self.maze_graph.mark_seen(x - i, y)
+				i = i + 1
+		
+	
 	def next_move(self, sensors):
         	'''
         	Use this function to determine the next move the robot should make,
@@ -207,7 +251,6 @@ class Robot(object):
         	'''
 
 		# We're going to manually control the robot for now. 
-		self.maze_graph.print_maze_view()
 
 		print("Sensor data: " + 
 			str(sensors[0]) + " " +
@@ -222,6 +265,10 @@ class Robot(object):
 
 		print("Current position: " + str(self.location))
 		print("Current heading: " + self.heading)
+
+		self.update_maze_map(normalized_sensor_data)
+
+		self.maze_graph.print_maze_view()
 
 		user_rotation = raw_input("Rotate (L/N/R): ")
 		user_movement = raw_input("Movement [-3 <= m <= 3]: ")

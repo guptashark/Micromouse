@@ -36,20 +36,17 @@ class MazeGraph(object):
 			j = 0
 
 	# just get the colors from all the thingies and print them. 
+	# We're adding in our view of transitions now too. 
 	def print_maze_view(self):
-		# [0, 11], ... [11, 11]
-		# ...
-		# [0, 0], ...  [11, 0]
 
-		# first row from top: 
-		# i = 0, j = 11
-		# i = 1, j = 11
-		# i = 2, j = 11
-		# ...
-
-		# second row from top: 
-		# i = 0, j = 10
-		# etc. 
+		# To see the transition, it suffices to start from the top, and build 
+		# two strings. One is the row with the tiles, and spaces between them
+		# (dashes indicate connection) and then another string, 
+		# with staffs to indicate vertical connection. If the connection is 
+		# unknown, don't print anything. If the connection is None, don't print
+		#, and if the connection exists, then print the dash or staff. 
+		# since we're going from top to top right, then down, always look at the 
+		# right for a connection, and down. Then, we'll get a full graph. 
 
 		y = self.width - 1
 		x = 0
@@ -57,15 +54,30 @@ class MazeGraph(object):
 		while(y >= 0 ):
 
 			to_print_str = ""
+			bottom_str = ""
 
 			while(x < self.width):
 				to_print_str = to_print_str + self.maze[(x, y)].get_color()
+				connections = self.maze[(x, y)].get_transitions()
+				# check if "R" is in connections and if "S" is in connections
+				if("E" in connections):
+					to_print_str = to_print_str + "-"
+				else:
+					to_print_str = to_print_str + " "
+
+				if("S" in connections):
+					bottom_str = bottom_str + "| "
+				else:
+					bottom_str = bottom_str + "  "
+
+
 				x = x + 1
 
 			y = y - 1
 			x = 0
 
 			print(to_print_str)
+			print(bottom_str)
 			
 	def mark_seen(self, x_coord, y_coord):
 		self.maze[(x_coord, y_coord)].set_grey()
@@ -85,13 +97,19 @@ class MazeTile(object):
 		self.color = "B"
 		self.transition = {}
 
-	# The key is the tuple: (N/E/S/W), steps)	
-	# The value is the obj reference we get from the tiles Table
-	def add_transition(self, pos, tile):
+	# The key is the direction (N, E, S, W)
+	# The value is the obj reference we get from the MazeTile Table
+	# None if there is a wall, 
+	# The reference itself if we can get there from the current tile. 
+	# Don't need to make the extra branches to signify where all we 
+	# can go in one move, a later algo can take care of that. 
+	# To minimize memory footprint, we have a simpler graph with less
+	# , but still fully representative connections. 
+	def add_transition(self, direction, tile):
 		""" TODO Check to see if the key is already there. 
 		If it is, return 1, or something to signify it. (later) 
 		"""
-		self.transition[pos] = tile
+		self.transition[direction] = tile
 
 	def set_white(self):
 		self.color = "W"
@@ -103,7 +121,7 @@ class MazeTile(object):
 		return self.color
 
 	def get_transitions(self):
-		return self.transitions
+		return self.transition
 
 	def print_info(self, verbose_level):
 		

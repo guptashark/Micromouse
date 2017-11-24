@@ -82,6 +82,8 @@ class MazeGraph(object):
 	def mark_seen(self, x_coord, y_coord):
 		self.maze[(x_coord, y_coord)].set_grey()
 
+	def get_tile_ref(self, x_coord, y_coord):
+		return self.maze[(x_coord, y_coord)]
 
 
 class MazeTile(object):
@@ -211,6 +213,8 @@ class Robot(object):
 
 	# Here we figure out where all we can see using normalized sensor values
 	# and mark them accordingly as seen (and later fully computed)
+	# We also introduce connections, so that we can build a small 
+	# graph of where the robot knows it can go. 
 	def update_maze_map(self, normalized_sensors):
 		
 		# current space
@@ -223,13 +227,32 @@ class Robot(object):
 			while(i <= normalized_sensors[0]):
 				self.maze_graph.mark_seen(x, y + i)
 				i = i + 1
-
+			
+			i = 0
+			while(i < normalized_sensors[0]):
+				current = self.maze_graph.get_tile_ref(x, y + i)
+				next_tile = self.maze_graph.get_tile_ref(x, y + i + 1)
+				# link them together
+				current.add_transition("N", next_tile)
+				next_tile.add_transition("S", current)
+				i = i + 1
+			
 		# seen east
 		if(normalized_sensors[1] != None):
 			i = 1
 			while(i <= normalized_sensors[1]):
 				self.maze_graph.mark_seen(x + i, y)
 				i = i + 1
+
+			i = 0
+			while(i < normalized_sensors[1]):
+				current = self.maze_graph.get_tile_ref(x + i, y)
+				next_tile = self.maze_graph.get_tile_ref(x + i + 1, y)
+				# link them together
+				current.add_transition("E", next_tile)
+				next_tile.add_transition("W", current)
+				i = i + 1
+
 
 		# seen south
 		if(normalized_sensors[2] != None):
@@ -238,12 +261,35 @@ class Robot(object):
 				self.maze_graph.mark_seen(x, y - i)
 				i = i + 1
 
+			
+			i = 0
+			while(i < normalized_sensors[2]):
+				current = self.maze_graph.get_tile_ref(x -i, y-i)
+				next_tile = self.maze_graph.get_tile_ref(x, y - i - 1)
+				# link them together
+				current.add_transition("S", next_tile)
+				next_tile.add_transition("N", current)
+				i = i + 1
+
+
+
 		# seen west
 		if(normalized_sensors[3] != None):
 			i = 1
 			while(i <= normalized_sensors[3]):
 				self.maze_graph.mark_seen(x - i, y)
 				i = i + 1
+
+	
+			i = 0
+			while(i < normalized_sensors[3]):
+				current = self.maze_graph.get_tile_ref(x - i, y)
+				next_tile = self.maze_graph.get_tile_ref(x - i - 1, y)
+				# link them together
+				current.add_transition("E", next_tile)
+				next_tile.add_transition("W", current)
+				i = i + 1
+
 		
 	
 	def next_move(self, sensors):

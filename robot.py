@@ -1,4 +1,5 @@
 import numpy as np
+from IPython import embed
 
 # The data structure that holds all the tiles
 class MazeGraph(object):
@@ -21,6 +22,38 @@ class MazeGraph(object):
 
 			x = x  + 1
 			y = 0
+
+		# it makes sense for the MazeGraph to automatically set the edges
+		# of the maze to "None" transitions. 
+		
+		# top row (northmost tiles) 
+		x = 0
+		y = self.width - 1
+		while(x < self.width):
+			self.maze[(x, y)].add_transition("N", None)
+			x = x + 1
+
+		# bottom row (southmost tiles) 
+		x = 0
+		y = 0
+		while(x < self.width):
+			self.maze[(x, y)].add_transition("S", None)
+			x = x + 1
+
+		# left column (Westmost tiles) 
+		x = 0 
+		y = 0
+		while(y < self.width):
+			self.maze[(x, y)].add_transition("W", None)
+			y = y + 1
+
+		# right column (Eastmost tiles)
+		x = self.width - 1
+		y = 0
+		while(y < self.width):
+			self.maze[(x, y)].add_transition("E", None)
+			y = y + 1
+
 
 	# we can change the level of info we get with verbose level 0 - whatever
 	def print_info(self, verbose_level):
@@ -78,6 +111,24 @@ class MazeGraph(object):
 
 			print(to_print_str)
 			print(bottom_str)
+
+	def print_knowledge_index(self):
+		y = self.width - 1
+		x = 0
+
+		while(y >= 0 ):
+
+			to_print_str = ""
+
+			while(x < self.width):
+				to_print_str = to_print_str + str(self.maze[(x, y)].get_knowledge_index())
+				x = x + 1
+
+			y = y - 1
+			x = 0
+
+			print(to_print_str)
+
 			
 	def mark_seen(self, x_coord, y_coord):
 		self.maze[(x_coord, y_coord)].set_grey()
@@ -97,6 +148,11 @@ class MazeTile(object):
 		self.x_coord = x_coord
 		self.y_coord = y_coord
 		self.color = "B"
+		# number that indicates how many sides we know - 
+		# 0 is we know nothing, 4 is we know every side. 
+		self.knowledge_index = 0
+		# starts off empty. If there is a wall, transition["N"] = None. 
+		# if not, transition["N"] = tile. This way, things are well defined.
 		self.transition = {}
 
 	# The key is the direction (N, E, S, W)
@@ -111,7 +167,9 @@ class MazeTile(object):
 		""" TODO Check to see if the key is already there. 
 		If it is, return 1, or something to signify it. (later) 
 		"""
-		self.transition[direction] = tile
+		if(direction not in self.transition):
+			self.transition[direction] = tile
+			self.knowledge_index = self.knowledge_index + 1
 
 	def set_white(self):
 		self.color = "W"
@@ -124,6 +182,9 @@ class MazeTile(object):
 
 	def get_transitions(self):
 		return self.transition
+
+	def get_knowledge_index(self):
+		return self.knowledge_index
 
 	def print_info(self, verbose_level):
 		
@@ -290,7 +351,34 @@ class Robot(object):
 				next_tile.add_transition("W", current)
 				i = i + 1
 
-		
+	
+
+	def decide_move(self):
+		""" This function is called during "next_move". At this point, 
+		the maze has been updated so the robot can figure out where to
+		go next. 
+
+		Our algorithm for deciding on a direction should depend on two 
+		goals: 
+			1 - getting closer to the center
+			2 - exploring things that are unexplored. 
+
+		We'll have a parameter that changes the influece of the two goals- 
+		In the beginning, the robot will want to explore more, and later
+		on, it'll want to get closer to the center. Since mazes are tricky, 
+		and could be adversarial, it's best to keep exploring, even after
+		finding the center. 
+
+		We may also want to add in more information about the tiles themselves. 
+		For instance, if we see north 0 spaces and we're on tile (3, 4), then 
+		we can fill in information on tile (3, 5) - it's south space is None. 
+		Then, we're building the map faster and can even write in that we know
+		1/4 data points about the tile (3, 4). The only issue is, that we'll start
+		collecting too much info for us to have printed out every time. We can 
+		see log files, and perhaps start inspecting things. 
+
+		So now, we use ipython embed.
+		"""	
 	
 	def next_move(self, sensors):
         	'''
@@ -316,29 +404,27 @@ class Robot(object):
 
 		# We're going to manually control the robot for now. 
 
-		print("Sensor data: " + 
-			str(sensors[0]) + " " +
-			str(sensors[1]) + " " + 
-			str(sensors[2]))
+		# print("Sensor data: " + 
+		#	str(sensors[0]) + " " +
+		#	str(sensors[1]) + " " + 
+		#	str(sensors[2]))
 
 		# we need to normalize sensor data to N, E, S, W so that
 		# we can then update the mazeview. 
-
 		normalized_sensor_data = self.normalize_sensor_data(sensors, self.heading)
-		print("Normalized sensor data: " + str(normalized_sensor_data))
 
+		print("Normalized sensor data: " + str(normalized_sensor_data))
 		print("Current position: " + str(self.location))
 		print("Current heading: " + self.heading)
 
+		embed()
+
 		self.update_maze_map(normalized_sensor_data)
-
 		self.maze_graph.print_maze_view()
-
 		user_rotation = raw_input("Rotate (L/N/R): ")
 		user_movement = raw_input("Movement [-3 <= m <= 3]: ")
 
 		rotation_int = 0
-
 		if(user_rotation == "L"):
 			rotation_int = -90
 		elif(user_rotation == "N"):
@@ -347,7 +433,7 @@ class Robot(object):
 			rotation_int = 90
 		else:
 			print("Invalid rotation. Passing 0.")
-
+		
 		# We're going to build a map of the maze. 
 		# tiles: 
 		#	-black	(unseen)
@@ -356,6 +442,7 @@ class Robot(object):
 		rotation = rotation_int
 		movement = int(user_movement)
 
+		# we can update those values, since we're currently assuming 
 		self.heading = self.update_heading(self.heading, rotation)
 		self.location = self.update_location(self.location, self.heading, movement)
 

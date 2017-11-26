@@ -57,7 +57,7 @@ class MazeGraph(object):
 
 	# we can change the level of info we get with verbose level 0 - whatever
 	def print_info(self, verbose_level):
-		i = 0
+		 i = 0
 		j = 0
 		while(i < self.width):
 

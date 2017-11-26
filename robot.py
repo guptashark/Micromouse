@@ -94,12 +94,14 @@ class MazeGraph(object):
 				connections = self.maze[(x, y)].get_transitions()
 				# check if "R" is in connections and if "S" is in connections
 				if("E" in connections):
-					to_print_str = to_print_str + "-"
+					if(connections["E"] is not None):
+						to_print_str = to_print_str + "-"
 				else:
 					to_print_str = to_print_str + " "
 
 				if("S" in connections):
-					bottom_str = bottom_str + "| "
+					if(connections["S"] is not None):
+						bottom_str = bottom_str + "| "
 				else:
 					bottom_str = bottom_str + "  "
 

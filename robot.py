@@ -17,7 +17,7 @@ class MazeGraph(object):
 		while(x < self.width):
 
 			while(y < self.width):
-				self.maze[(x, y)] = MazeTile(x, y)
+				self.maze[(x, y)] = MazeTile(x, y, width)
 				y = y + 1
 
 			x = x  + 1
@@ -57,7 +57,7 @@ class MazeGraph(object):
 
 	# we can change the level of info we get with verbose level 0 - whatever
 	def print_info(self, verbose_level):
-		 i = 0
+		i = 0
 		j = 0
 		while(i < self.width):
 
@@ -131,6 +131,26 @@ class MazeGraph(object):
 
 			print(to_print_str)
 
+
+	def print_sqr_distances(self):
+		y = self.width - 1
+		x = 0
+
+		while(y >= 0 ):
+
+			to_print_str = ""
+
+			while(x < self.width):
+				to_print_str = to_print_str + str(self.maze[(x, y)].get_distance()) + "\t"
+				x = x + 1
+
+			y = y - 1
+			x = 0
+
+			print(to_print_str)
+
+
+
 			
 	def mark_seen(self, x_coord, y_coord):
 		self.maze[(x_coord, y_coord)].set_grey()
@@ -142,13 +162,16 @@ class MazeGraph(object):
 class MazeTile(object):
 	# Start off every Tile as black for init. 
 	# Since the Tile is black, its map to other tiles is empty. 
+	# give each tile the knowledge of the maze dim so it can calculate
+	# how far it is from the closest center tile.
 	# Map to other tiles: 
 	#	map key is a tuple (N/E/S/W)
 	#	map value is ref to other square or None if it hits wall/edge. 
-	def __init__(self, x_coord, y_coord):
+	def __init__(self, x_coord, y_coord, width):
 		# where am I? 
 		self.x_coord = x_coord
 		self.y_coord = y_coord
+		self.width = width
 		self.color = "B"
 		# number that indicates how many sides we know - 
 		# 0 is we know nothing, 4 is we know every side. 
@@ -156,6 +179,26 @@ class MazeTile(object):
 		# starts off empty. If there is a wall, transition["N"] = None. 
 		# if not, transition["N"] = tile. This way, things are well defined.
 		self.transition = {}
+		
+		closest_center_y_val = 0
+		closest_center_x_val = 0
+
+		if(y_coord >= self.width / 2):
+			closest_center_y_val = self.width / 2
+		else:
+			closest_center_y_val = (self.width / 2) - 1
+	
+		if(x_coord >= self.width / 2):
+			closest_center_x_val = self.width / 2
+		else:
+			closest_center_x_val = (self.width / 2) - 1
+
+		# now find the euclidean distance
+
+		x_sqr_dist = (closest_center_x_val - x_coord)**2
+		y_sqr_dist = (closest_center_y_val - y_coord)**2
+
+		self.distance_from_center = x_sqr_dist + y_sqr_dist
 
 	# The key is the direction (N, E, S, W)
 	# The value is the obj reference we get from the MazeTile Table
@@ -191,6 +234,9 @@ class MazeTile(object):
 	def print_info(self, verbose_level):
 		
 		print("[" + str(self.x_coord) + ", " + str(self.y_coord) + "]")
+
+	def get_distance(self):
+		return self.distance_from_center
 
 
 class Robot(object):
@@ -380,6 +426,15 @@ class Robot(object):
 		see log files, and perhaps start inspecting things. 
 
 		So now, we use ipython embed.
+
+		How can we integrate the idea that we know how much we know of each 
+		node into whether we want to go to it? Also, there is a unique idea: 
+		We could have two metrics in a node to signify how far away it is 
+		from the center. 1 is the square of the euclidean distance, the other
+		is the number of steps that particular square is from a center square. 
+
+		Right now, it's best to figure out how close each space is to the 
+		center as a measure of it's worth. 
 		"""	
 	
 	def next_move(self, sensors):

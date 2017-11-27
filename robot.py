@@ -87,8 +87,9 @@ class MazeGraph(object):
 		alt_table = ["?", "/", "X", "+", "O"]
 		while(y >= 0 ):
 
-			to_print_str = ""
-			bottom_str = ""
+			# add this in to make it easier to see which row/col we're in. 
+			to_print_str = str(y) + "\t"
+			bottom_str = "\t"
 
 			while(x < self.width):
 				if(alt_symbols):
@@ -122,6 +123,14 @@ class MazeGraph(object):
 
 			print(to_print_str)
 			print(bottom_str)
+
+		# print bottom numbers to see columns - modulo 10
+		axis_str = "\t"
+		str_iter = 0
+		while(str_iter < self.width):
+			axis_str = axis_str + str(str_iter % 10) + " " 
+			str_iter = str_iter + 1
+		print axis_str
 
 	def print_knowledge_index(self):
 		y = self.width - 1

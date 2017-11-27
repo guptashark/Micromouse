@@ -70,7 +70,7 @@ class MazeGraph(object):
 
 	# just get the colors from all the thingies and print them. 
 	# We're adding in our view of transitions now too. 
-	def print_maze_view(self):
+	def print_maze_view(self, alt_symbols = False):
 
 		# To see the transition, it suffices to start from the top, and build 
 		# two strings. One is the row with the tiles, and spaces between them
@@ -84,13 +84,18 @@ class MazeGraph(object):
 		y = self.width - 1
 		x = 0
 
+		alt_table = ["?", "/", "X", "+", "O"]
 		while(y >= 0 ):
 
 			to_print_str = ""
 			bottom_str = ""
 
 			while(x < self.width):
-				to_print_str = to_print_str + self.maze[(x, y)].get_color()
+				if(alt_symbols):
+					knowledge_index = self.maze[(x, y)].get_knowledge_index()
+					to_print_str = to_print_str + alt_table[knowledge_index]
+				else:
+					to_print_str = to_print_str + self.maze[(x, y)].get_color()
 				connections = self.maze[(x, y)].get_transitions()
 				# check if "R" is in connections and if "S" is in connections
 				if("E" in connections):
@@ -118,6 +123,7 @@ class MazeGraph(object):
 		y = self.width - 1
 		x = 0
 
+		
 		while(y >= 0 ):
 
 			to_print_str = ""
@@ -435,6 +441,31 @@ class Robot(object):
 
 		Right now, it's best to figure out how close each space is to the 
 		center as a measure of it's worth. 
+
+		Now that we've got this done, we're going to actually start making
+		decicions since we have everything we need - 
+		how close is a tile to the center, and how much do we know about it. 
+
+		hereafter, we'll refer to the distance fo the tile from the center
+		as just its distance. 
+
+		Lets try one algorithm. 
+			Look at graph, and find the tile that has the smallest
+			distance. If we already know everything about that tile, 
+			then look for the next smallest distance. Once we find the
+			smallest distance tile that isn't fully explored, plan a 
+			route to get there. 
+
+			We can make route planning robust by either trying to 
+			skip tiles (covering a few in one turn if we already 
+			fully explored them) or by stopping at tiles that are
+			not fully explored to see if we can now get to a tile
+			that is more useful to explore than the one we're going
+			to right now. I think this approach *must* eventually 
+			find a way to the middle.  
+
+			The current issue is route planning. We need to know 
+			how to efficiently get between two places. 
 		"""	
 	
 	def next_move(self, sensors):
@@ -474,10 +505,8 @@ class Robot(object):
 		print("Current position: " + str(self.location))
 		print("Current heading: " + self.heading)
 
-		embed()
-
 		self.update_maze_map(normalized_sensor_data)
-		self.maze_graph.print_maze_view()
+		self.maze_graph.print_maze_view(True)
 		user_rotation = raw_input("Rotate (L/N/R): ")
 		user_movement = raw_input("Movement [-3 <= m <= 3]: ")
 

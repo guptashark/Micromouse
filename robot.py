@@ -101,12 +101,16 @@ class MazeGraph(object):
 				if("E" in connections):
 					if(connections["E"] is not None):
 						to_print_str = to_print_str + "-"
+					else:
+						to_print_str = to_print_str + " " 
 				else:
 					to_print_str = to_print_str + " "
 
 				if("S" in connections):
 					if(connections["S"] is not None):
 						bottom_str = bottom_str + "| "
+					else:
+						bottom_str = bottom_str + "  "
 				else:
 					bottom_str = bottom_str + "  "
 
@@ -326,10 +330,50 @@ class Robot(object):
 
 		return current_location
 
+
+	# loc_A, and loc_B are tuples that indicate a tiles perceived location. 
+	# if the second tile is in the maze (the first is guaranteed) then the 
+	# fn will join them using the direction parameter. The direction param
+	# is the direction in which a robot on loc_A would travel to get to 
+	# loc_B
+	def join_by_wall(self, loc_A, loc_B, direction):
+		if(loc_B[0] >= self.maze_dim):
+			return
+
+		if(loc_B[1] >= self.maze_dim):
+			return
+
+		if(loc_B[0] < 0):
+			return
+
+		if(loc_B[1] < 0):
+			return
+
+		# at this point, it's guaranteed that we're not on an edge. 	
+		opposite_dict = {
+			"N": "S",
+			"E": "W",
+			"S": "N",
+			"W": "E"
+		}
+
+		current = self.maze_graph.get_tile_ref(loc_A[0], loc_A[1])
+		next_tile = self.maze_graph.get_tile_ref(loc_B[0], loc_B[1])
+
+		current.add_transition(direction, None)
+		next_tile.add_transition(opposite_dict[direction], None)
+		
+
+
 	# Here we figure out where all we can see using normalized sensor values
 	# and mark them accordingly as seen (and later fully computed)
 	# We also introduce connections, so that we can build a small 
 	# graph of where the robot knows it can go. 
+
+	# we need better map building. if we can only see so far, 
+	# That means that on the other side of the wall, there is
+	# either nothing (it's the edge of the maze) or another tile. 
+	# In which case, we know something about that tile. 
 	def update_maze_map(self, normalized_sensors):
 		
 		# current space
@@ -351,6 +395,8 @@ class Robot(object):
 				current.add_transition("N", next_tile)
 				next_tile.add_transition("S", current)
 				i = i + 1
+
+			self.join_by_wall((x, y + i), (x, y+ i + 1), "N")
 			
 		# seen east
 		if(normalized_sensors[1] != None):
@@ -368,6 +414,8 @@ class Robot(object):
 				next_tile.add_transition("W", current)
 				i = i + 1
 
+			self.join_by_wall((x+i, y), (x+i+1, y), "E")
+
 
 		# seen south
 		if(normalized_sensors[2] != None):
@@ -376,15 +424,18 @@ class Robot(object):
 				self.maze_graph.mark_seen(x, y - i)
 				i = i + 1
 
-			
 			i = 0
 			while(i < normalized_sensors[2]):
-				current = self.maze_graph.get_tile_ref(x -i, y-i)
+				current = self.maze_graph.get_tile_ref(x, y-i)
 				next_tile = self.maze_graph.get_tile_ref(x, y - i - 1)
 				# link them together
 				current.add_transition("S", next_tile)
 				next_tile.add_transition("N", current)
 				i = i + 1
+
+			self.join_by_wall((x, y-i), (x, y-i-1), "S")
+
+			
 
 
 
@@ -405,7 +456,8 @@ class Robot(object):
 				next_tile.add_transition("W", current)
 				i = i + 1
 
-	
+			self.join_by_wall((x-i, y), (x-i-1, y), "W")
+
 
 	def decide_move(self):
 		""" This function is called during "next_move". At this point, 

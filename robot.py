@@ -752,13 +752,13 @@ class Robot(object):
 		# we need to normalize sensor data to N, E, S, W so that
 		# we can then update the mazeview. 
 		normalized_sensor_data = self.normalize_sensor_data(sensors, self.heading)
+# UNCOMMENT AS NEEDED
 		print("================================================================")
-		print("Normalized sensor data: " + str(normalized_sensor_data))
-		print("Current position: " + str(self.location))
-		print("Current heading: " + self.heading)
-		print("Move number: " + str(self.num_moves))
+		print("Sensor data: " + str(normalized_sensor_data))
+#		print("Current position: " + str(self.location))
+#		print("Current heading: " + self.heading)
 		completion_score = self.maze_graph.get_completion_index()
-		print("completion score: " + str(completion_score) + "%")
+		print("Move number: " + str(self.num_moves) + "\t" + "completion score: " + str(completion_score) + "%")
 
 		# Delete this later, it's for running metrics on the robot's performance
 # IMORTANT FOR DEBUGING THINGY
@@ -792,8 +792,9 @@ class Robot(object):
 		
 		print("Waypoint: " + str(waypoint.x_coord) + ", " +  str(waypoint.y_coord))
 
-		print("Directions:")
+# This whole section of printing might be kind of pointless
 		num_steps = len(directions)
+		"""
 		i = num_steps - 1
 		num_printed = 0
 		while(i >= 0 and num_printed < 5):
@@ -803,13 +804,14 @@ class Robot(object):
 
 		if(num_printed < num_steps):
 			print("... (" + str(num_steps - num_printed) + " more in current path)")
-
+		"""
 		immediate_action = self.calc_immediate_action(directions[num_steps - 1])
+		"""
 		print("Proposed action: " + str(immediate_action))
 
 		# This is just here so that I can see everytime the state of the 
 		# robot before it does something
-
+		"""
 		raw_input("Waiting to proceed...")
 		unused_variable_01 = os.system('clear')
 

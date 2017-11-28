@@ -1,0 +1,24 @@
+This is the same algo as the base, except 
+that now the robot considers two possible destination. 
+If one of them is significantly closer, then the robot
+will go to it instead of the one that has a distance
+closer to the center. This helps prevent the robot
+from zig-zagging through the maze. The problem is described
+in better detail in the description for "base_algo". Right 
+now, it seems as though it has reduced the robot's explore
+time by quite a bit - 150 fewer steps in a 12x12 maze, 
+around 200 in the 14x14 and the 16x16 maze now completes
+a full search. Also, we're not giving the robot too many 
+options - it won't keep searching low quality squares just
+to get a higher index because it is deciding between the two best 
+distance squares and moving to them - if it does get stuck 
+looking at lower quality squares it will eventually explore
+the entire sector and be forced to go to the high quality 
+square. 
+
+We can do more improvements. When the robot gets its path, 
+it should try to jump as many steps as it can in one turn, 
+provided that the squares its jumping over are all fully
+discovered. For those long trips across the maze, skipping
+some squares will definitely lessen the number of moves
+the robot has to make. 

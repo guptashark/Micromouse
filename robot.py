@@ -231,7 +231,12 @@ class MazeGraph(object):
 	# current is the tile ref to the current location
 	# waypoint is the tile ref to the waypoint  
 	def get_directions_to_waypoint(self, start_point, waypoint):
-		
+
+		# Seems like a bad fix... but could work, right? 	
+		if(waypoint == None):
+			empty_list = []
+			return empty_list
+				
 		# store the tile distance from current, 
 		# and a ref to the tile that preceeds it. 
 		# (So we can build our path)
@@ -386,7 +391,7 @@ class Robot(object):
 		start_square.set_connected()
 
 		# for recording maze_knowledge
-		self.file = open("performance_metrics/width-16.txt", 'w')
+		self.file = open("performance_metrics/width-12.txt", 'w')
 
 	def reset_for_run_2(self):
 		self.location = [0, 0]

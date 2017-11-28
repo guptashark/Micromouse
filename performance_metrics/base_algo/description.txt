@@ -1,0 +1,25 @@
+This data is useful because we can plot it to see how well 
+our robot is discovering the maze. It is just numbers right now, 
+but here are the key points we're running with: 
+	- Find an unexplored tile with the least distance.
+	- Plot a route to that tile. 
+	- If at any point, we discover a better tile, update the route. 
+
+The issues we're running across are: 
+	-The robot may zig zag through the maze: 
+		-near tile A, it sees a tile around 12 steps away (tile B)
+		-it visits B, expending 12 steps, or more
+		-it then sees a tile right next to A
+		-it then visits the tile next to A, again expending 12 steps
+		-The knowledge gain seems to be quite minimal for effort. 
+
+	-The robot only takes one step at a time. 
+		-The robot only ever takes one step at a time. 
+		-smarter decision making will help it skip over tiles
+			that is has already discovered on the route
+			instead of stopping at every tile. 
+
+Stats: 
+	robot fully discovers 12x12 at 655, 
+	robot fully discovers 14x14 at 822,
+	robot never fully discovers 16x16, instead getting to just 86%.  

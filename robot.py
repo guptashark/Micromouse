@@ -160,11 +160,36 @@ class MazeGraph(object):
 	def get_tile_ref(self, x_coord, y_coord):
 		return self.maze[(x_coord, y_coord)]
 
+	# a useful metric to know how well we're doing at exploring the maze
+	def get_completion_index(self):
 		
+		raw_knowledge_score = 0
+		x = 0
+		y = 0
+		while(x < self.width):
+			y = 0
+			while(y < self.width):
+				tile_score = self.maze[(x, y)].get_knowledge_index()
+				raw_knowledge_score = raw_knowledge_score + tile_score
+				y = y + 1
+			x = x + 1
+
+		dec_val = float(raw_knowledge_score) / (float(self.width ** 2) * 4)
+		percent_val = int(dec_val * 100)
+		return percent_val
+
+	# Now gives you two waypoints to pick from. 	
 	def get_next_waypoint(self):
 		
-		min_distance_so_far = 128	# bigger than any possible distance. 
-		waypoint_tile = None
+		# min_1 is min distance 1
+		min_1 = 128	# bigger than any possible distance. 
+		waypoint_1 = None
+
+		min_2 = 129
+		waypoint_2 = None
+
+		# instead of finding one tile, find the best 2 tiles. If tile 2 is sufficiently closer, 
+		# we may end up going there instead - especially since some tiles have the same distances. 
 
 		x = 0
 		while(x < self.width):
@@ -185,14 +210,23 @@ class MazeGraph(object):
 	#			print(str(current.x_coord) + " " + str(current.y_coord) + 
 	#				str(curr_connected) + " " + str(curr_distance) + " " + str(curr_knowledge))
 
-				if(curr_connected and (curr_distance <= min_distance_so_far) and (curr_knowledge < 4)):
-					min_distance_so_far = curr_distance
-					waypoint_tile = current
+				#if(curr_connected and (curr_distance <= min_distance_so_far) and (curr_knowledge < 4)):
+				if(curr_connected and (curr_knowledge < 4)):
+					
+					# better than both 
+					if(curr_distance <= min_1):
+						min_2 = min_1
+						min_1 = curr_distance
+						waypoint_2 = waypoint_1
+						waypoint_1 = current
+					elif(curr_distance <= min_2):
+						min_2 = curr_distance
+						waypoint_2 = current
 
 				y = y + 1
 			x = x + 1
 
-		return waypoint_tile
+		return [waypoint_1, waypoint_2]
 
 	# current is the tile ref to the current location
 	# waypoint is the tile ref to the waypoint  
@@ -248,12 +282,6 @@ class MazeGraph(object):
 						return reverse_path
 
 	
-			
-
-		
-
-
-
 
 
 
@@ -353,8 +381,19 @@ class Robot(object):
 		self.heading = 'up'
 		self.maze_dim = maze_dim
 		self.maze_graph = MazeGraph(maze_dim)
+		self.num_moves = 0
 		start_square = self.maze_graph.get_tile_ref(0, 0)
 		start_square.set_connected()
+
+		# for recording maze_knowledge
+		self.file = open("performance_metrics/width-16.txt", 'w')
+
+	def reset_for_run_2(self):
+		self.location = [0, 0]
+		self.heading = 'up'
+		self.num_moves = 0
+		self.file.close()
+		
 
 	# for debugging in embedded mode: 
 	def get_tile_info(self, x, y):
@@ -664,6 +703,8 @@ class Robot(object):
 			how to efficiently get between two places. 
 		"""	
 		pass
+
+	
 	
 	def next_move(self, sensors):
         	'''
@@ -696,20 +737,45 @@ class Robot(object):
 		# we need to normalize sensor data to N, E, S, W so that
 		# we can then update the mazeview. 
 		normalized_sensor_data = self.normalize_sensor_data(sensors, self.heading)
-
+		print("================================================================")
 		print("Normalized sensor data: " + str(normalized_sensor_data))
 		print("Current position: " + str(self.location))
 		print("Current heading: " + self.heading)
+		print("Move number: " + str(self.num_moves))
+		completion_score = self.maze_graph.get_completion_index()
+		print("completion score: " + str(completion_score) + "%")
+
+		# Delete this later, it's for running metrics on the robot's performance
+# IMORTANT FOR DEBUGING THINGY
+		self.file.write(str(completion_score) + "\n")
+
 
 		self.update_maze_map(normalized_sensor_data)
+
+		# we don't need to really print the maze at this point, I think 
+# THIS IS WHERE YOU CAN TOGGLE MAZE VIEW
 		self.maze_graph.print_maze_view()
 
 		# Now that we have all the data from sensors, we can 
-		# determine the next waypoint. 
-		waypoint = self.maze_graph.get_next_waypoint()
-		print("Waypoint: " + str(waypoint.x_coord) + ", " +  str(waypoint.y_coord))
+		# determine the next waypoints - then decide which one to go to. 
+		waypoints = self.maze_graph.get_next_waypoint()
+		
 		curr_tile = self.maze_graph.get_tile_ref(self.location[0], self.location[1])
-		directions = self.maze_graph.get_directions_to_waypoint(curr_tile, waypoint)
+		directions_1 = self.maze_graph.get_directions_to_waypoint(curr_tile, waypoints[0])
+		directions_2 = self.maze_graph.get_directions_to_waypoint(curr_tile, waypoints[1])
+
+		directions = None
+		waypoint = None
+		if(len(directions_2) + 6 < len(directions_1)):
+			directions = directions_2
+			waypoint = waypoints[1]
+			
+		else:
+			directions = directions_1
+			waypoint = waypoints[0]
+
+		
+		print("Waypoint: " + str(waypoint.x_coord) + ", " +  str(waypoint.y_coord))
 
 		print("Directions:")
 		num_steps = len(directions)
@@ -752,5 +818,6 @@ class Robot(object):
 		# we can update those values, since we're currently assuming 
 		self.heading = self.update_heading(self.heading, rotation)
 		self.location = self.update_location(self.location, self.heading, movement)
+		self.num_moves = self.num_moves + 1
 
 		return rotation, movement

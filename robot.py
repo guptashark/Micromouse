@@ -1,4 +1,5 @@
 import numpy as np
+from collections import deque
 from IPython import embed
 
 # The data structure that holds all the tiles
@@ -111,10 +112,7 @@ class MazeGraph(object):
 						bottom_str = bottom_str + "  "
 				else:
 					bottom_str = bottom_str + "  "
-
-
 				x = x + 1
-
 			y = y - 1
 			x = 0
 
@@ -132,21 +130,15 @@ class MazeGraph(object):
 	def print_knowledge_index(self):
 		y = self.width - 1
 		x = 0
-
-		
 		while(y >= 0 ):
-
 			to_print_str = ""
-
 			while(x < self.width):
 				to_print_str = to_print_str + str(self.maze[(x, y)].get_knowledge_index())
 				x = x + 1
-
 			y = y - 1
 			x = 0
 
 			print(to_print_str)
-
 
 	def print_sqr_distances(self):
 		y = self.width - 1
@@ -198,12 +190,70 @@ class MazeGraph(object):
 					waypoint_tile = current
 
 				y = y + 1
-
 			x = x + 1
 
+		return waypoint_tile
+
+	# current is the tile ref to the current location
+	# waypoint is the tile ref to the waypoint  
+	def get_directions_to_waypoint(self, start_point, waypoint):
+		
+		# store the tile distance from current, 
+		# and a ref to the tile that preceeds it. 
+		# (So we can build our path)
+
+		#current_distance = 0
+		#not_found = True
+
+		# fully discovered tiles
+		# key: (x, y)
+		# value: tile_ref to prevoius tile
+		discovered = {}
+
+		# queued up tiles to explore
+		# tuple is ref to tile and ref to tile that led to it. 
+		to_examine = deque('')
+		to_examine.append((start_point, None))
+
+		# sample input once a vertex is processed
+		#	discovered[current.get_tuple()] = (0, None)
+
+		# I really hate this ridiculously nested if statement
+		# Prolly change it to a nice linear if elif elif etc. 
+		while(True):
+			cur_tup= to_examine.popleft()
+			current = cur_tup[0]
+			if(current is not None): 	
+				if(current.tuple() not in discovered):
+					if(current != waypoint):
+						to_examine.append((current.transition.get("N"), current))
+						to_examine.append((current.transition.get("E"), current))
+						to_examine.append((current.transition.get("S"), current))
+						to_examine.append((current.transition.get("W"), current))
+
+						discovered[current.tuple()] = cur_tup[1]
+
+		#				current_distance = current_distance + 1
+					else:
+						# we found the waypoint! 
+						# build the list of like, cur_tup[1]'s and stuff. 
+
+						reverse_path = [current]
+						current = cur_tup[1]
+							
+						while(current != start_point):
+							reverse_path.append(current)
+							current = discovered[current.tuple()]
+
+						return reverse_path
+
+	
+			
 
 		
-		return waypoint_tile
+
+
+
 
 
 
@@ -250,6 +300,12 @@ class MazeTile(object):
 
 	def get_coords_as_str(self):
 		return "[" + str(self.x_coord) + ", " + str(self.y_coord) + "]"
+
+	def get_tuple(self):
+		return (self.x_coord, self.y_coord)
+
+	def tuple(self):
+		return (self.x_coord, self.y_coord)
 
 	def print_transitions(self):
 		for i in self.transition: 
@@ -415,8 +471,6 @@ class Robot(object):
 		current.add_transition(direction, None)
 		next_tile.add_transition(opposite_dict[direction], None)
 		
-
-
 	# Here we figure out where all we can see using normalized sensor values
 	# and mark them accordingly as seen (and later fully computed)
 	# We also introduce connections, so that we can build a small 
@@ -488,23 +542,6 @@ class Robot(object):
 				i = i + 1
 
 			self.join_by_wall((x-i, y), (x-i-1, y), "W")
-
-	# Find the tile that has the lowest distance and 
-	# is unexplored. 
-	def determine_waypoint(self):
-		
-		# need a sorted list - 
-		# when we see a tile, we need to 
-		# put it in the list by its distance. 
-		# Then, once the list is fully built, 
-		# walk down the list until we get a tile
-		# not fully discovered. 
-
-		# Best idea: keep a large list in the robot
-		# of every node we can reach. Update it as we
-		# see things. Then getting the next waypoint 
-		# is easiest.
-		pass
 
 	# destination is an (x, y) tuple. 
 	def find_route(self, destination):
@@ -598,7 +635,6 @@ class Robot(object):
         	the maze) then returing the tuple ('Reset', 'Reset') will indicate to
         	the tester to end the run and return the robot to the start.
         	'''
-
 		# We're going to manually control the robot for now. 
 
 		# print("Sensor data: " + 
@@ -614,8 +650,6 @@ class Robot(object):
 		print("Current position: " + str(self.location))
 		print("Current heading: " + self.heading)
 
-		
-
 		self.update_maze_map(normalized_sensor_data)
 		self.maze_graph.print_maze_view()
 
@@ -623,9 +657,19 @@ class Robot(object):
 		# determine the next waypoint. 
 		waypoint = self.maze_graph.get_next_waypoint()
 		print("Waypoint: " + str(waypoint.x_coord) + ", " +  str(waypoint.y_coord))
+		curr_tile = self.maze_graph.get_tile_ref(self.location[0], self.location[1])
+		directions = self.maze_graph.get_directions_to_waypoint(curr_tile, waypoint)
+
+		print("Directions:")
+		num_steps = len(directions)
+		i = num_steps - 1
+		while(i >= 0):
+			print(directions[i].tuple())
+			i = i - 1
+
+
 
 		#embed()	
-		
 		user_rotation = raw_input("Rotate (L/N/R): ")
 		user_movement = raw_input("Movement [-3 <= m <= 3]: ")
 

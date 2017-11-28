@@ -70,7 +70,7 @@ class MazeGraph(object):
 
 	# just get the colors from all the thingies and print them. 
 	# We're adding in our view of transitions now too. 
-	def print_maze_view(self, alt_symbols = False):
+	def print_maze_view(self):
 
 		# To see the transition, it suffices to start from the top, and build 
 		# two strings. One is the row with the tiles, and spaces between them
@@ -92,11 +92,8 @@ class MazeGraph(object):
 			bottom_str = "\t"
 
 			while(x < self.width):
-				if(alt_symbols):
-					knowledge_index = self.maze[(x, y)].get_knowledge_index()
-					to_print_str = to_print_str + alt_table[knowledge_index]
-				else:
-					to_print_str = to_print_str + self.maze[(x, y)].get_color()
+				knowledge_index = self.maze[(x, y)].get_knowledge_index()
+				to_print_str = to_print_str + alt_table[knowledge_index]
 				connections = self.maze[(x, y)].get_transitions()
 				# check if "R" is in connections and if "S" is in connections
 				if("E" in connections):
@@ -168,14 +165,46 @@ class MazeGraph(object):
 
 			print(to_print_str)
 
-
-
-			
-	def mark_seen(self, x_coord, y_coord):
-		self.maze[(x_coord, y_coord)].set_grey()
-
 	def get_tile_ref(self, x_coord, y_coord):
 		return self.maze[(x_coord, y_coord)]
+
+		
+	def get_next_waypoint(self):
+		
+		min_distance_so_far = 128	# bigger than any possible distance. 
+		waypoint_tile = None
+
+		x = 0
+		while(x < self.width):
+
+			y = 0
+			while(y < self.width):
+				
+				# need to make sure: 
+				# - is connected
+				# - has knowledge less than 4
+				# - has distance less than min. 
+
+				current = self.maze[(x, y)]
+				curr_connected = current.is_connected()
+				curr_distance = current.get_distance()
+				curr_knowledge = current.get_knowledge_index()
+
+	#			print(str(current.x_coord) + " " + str(current.y_coord) + 
+	#				str(curr_connected) + " " + str(curr_distance) + " " + str(curr_knowledge))
+
+				if(curr_connected and (curr_distance <= min_distance_so_far) and (curr_knowledge < 4)):
+					min_distance_so_far = curr_distance
+					waypoint_tile = current
+
+				y = y + 1
+
+			x = x + 1
+
+
+		
+		return waypoint_tile
+
 
 
 class MazeTile(object):
@@ -191,13 +220,14 @@ class MazeTile(object):
 		self.x_coord = x_coord
 		self.y_coord = y_coord
 		self.width = width
-		self.color = "B"
 		# number that indicates how many sides we know - 
 		# 0 is we know nothing, 4 is we know every side. 
 		self.knowledge_index = 0
 		# starts off empty. If there is a wall, transition["N"] = None. 
 		# if not, transition["N"] = tile. This way, things are well defined.
 		self.transition = {}
+
+		self.connected = False
 		
 		closest_center_y_val = 0
 		closest_center_x_val = 0
@@ -213,11 +243,20 @@ class MazeTile(object):
 			closest_center_x_val = (self.width / 2) - 1
 
 		# now find the euclidean distance
-
 		x_sqr_dist = (closest_center_x_val - x_coord)**2
 		y_sqr_dist = (closest_center_y_val - y_coord)**2
 
 		self.distance_from_center = x_sqr_dist + y_sqr_dist
+
+	def get_coords_as_str(self):
+		return "[" + str(self.x_coord) + ", " + str(self.y_coord) + "]"
+
+	def print_transitions(self):
+		for i in self.transition: 
+			if(self.transition[i] is None):
+				print(i + ": None")
+			else: 
+				print(i + ": " + self.transition[i].get_coords_as_str())
 
 	# The key is the direction (N, E, S, W)
 	# The value is the obj reference we get from the MazeTile Table
@@ -235,27 +274,20 @@ class MazeTile(object):
 			self.transition[direction] = tile
 			self.knowledge_index = self.knowledge_index + 1
 
-	def set_white(self):
-		self.color = "W"
-
-	def set_grey(self):
-		self.color = "G"
-
-	def get_color(self):
-		return self.color
-
 	def get_transitions(self):
 		return self.transition
 
 	def get_knowledge_index(self):
 		return self.knowledge_index
 
-	def print_info(self, verbose_level):
-		
-		print("[" + str(self.x_coord) + ", " + str(self.y_coord) + "]")
-
 	def get_distance(self):
 		return self.distance_from_center
+
+	def set_connected(self):
+		self.connected = True
+
+	def is_connected(self):
+		return self.connected
 
 
 class Robot(object):
@@ -265,6 +297,15 @@ class Robot(object):
 		self.heading = 'up'
 		self.maze_dim = maze_dim
 		self.maze_graph = MazeGraph(maze_dim)
+		start_square = self.maze_graph.get_tile_ref(0, 0)
+		start_square.set_connected()
+
+	# for debugging in embedded mode: 
+	def get_tile_info(self, x, y):
+		tile = self.maze_graph.get_tile_ref(x, y)
+		print(tile.x_coord)
+		print(tile.y_coord)
+		tile.print_transitions()
 
 	# puts None for the direction opposite the robot. 
 	def normalize_sensor_data(self, sensor_data, current_heading): 
@@ -286,11 +327,13 @@ class Robot(object):
 			nd[1] = sd[0]
 			nd[2] = sd[1]
 			nd[3] = sd[2]
-		else:
+		elif(current_heading == "left"):
 			nd[0] = sd[2]
 			nd[1] = None
 			nd[2] = sd[0]
 			nd[3] = sd[1]
+		else:
+			print("ERROR ERROR ERROR - unrecognized heading!")
 
 		return nd
 
@@ -344,7 +387,7 @@ class Robot(object):
 	# if the second tile is in the maze (the first is guaranteed) then the 
 	# fn will join them using the direction parameter. The direction param
 	# is the direction in which a robot on loc_A would travel to get to 
-	# loc_B
+	# loc_B. This function is essentially a helper for update maze map
 	def join_by_wall(self, loc_A, loc_B, direction):
 		if(loc_B[0] >= self.maze_dim):
 			return
@@ -391,11 +434,6 @@ class Robot(object):
 
 		# seen north
 		if(normalized_sensors[0] != None):
-			i = 1
-			while(i <= normalized_sensors[0]):
-				self.maze_graph.mark_seen(x, y + i)
-				i = i + 1
-			
 			i = 0
 			while(i < normalized_sensors[0]):
 				current = self.maze_graph.get_tile_ref(x, y + i)
@@ -403,17 +441,13 @@ class Robot(object):
 				# link them together
 				current.add_transition("N", next_tile)
 				next_tile.add_transition("S", current)
+				next_tile.set_connected()
 				i = i + 1
 
 			self.join_by_wall((x, y + i), (x, y+ i + 1), "N")
 			
 		# seen east
 		if(normalized_sensors[1] != None):
-			i = 1
-			while(i <= normalized_sensors[1]):
-				self.maze_graph.mark_seen(x + i, y)
-				i = i + 1
-
 			i = 0
 			while(i < normalized_sensors[1]):
 				current = self.maze_graph.get_tile_ref(x + i, y)
@@ -421,6 +455,7 @@ class Robot(object):
 				# link them together
 				current.add_transition("E", next_tile)
 				next_tile.add_transition("W", current)
+				next_tile.set_connected()
 				i = i + 1
 
 			self.join_by_wall((x+i, y), (x+i+1, y), "E")
@@ -428,11 +463,6 @@ class Robot(object):
 
 		# seen south
 		if(normalized_sensors[2] != None):
-			i = 1
-			while(i <= normalized_sensors[2]):
-				self.maze_graph.mark_seen(x, y - i)
-				i = i + 1
-
 			i = 0
 			while(i < normalized_sensors[2]):
 				current = self.maze_graph.get_tile_ref(x, y-i)
@@ -440,33 +470,51 @@ class Robot(object):
 				# link them together
 				current.add_transition("S", next_tile)
 				next_tile.add_transition("N", current)
+				next_tile.set_connected()
 				i = i + 1
 
 			self.join_by_wall((x, y-i), (x, y-i-1), "S")
 
-			
-
-
-
 		# seen west
 		if(normalized_sensors[3] != None):
-			i = 1
-			while(i <= normalized_sensors[3]):
-				self.maze_graph.mark_seen(x - i, y)
-				i = i + 1
-
-	
 			i = 0
 			while(i < normalized_sensors[3]):
 				current = self.maze_graph.get_tile_ref(x - i, y)
 				next_tile = self.maze_graph.get_tile_ref(x - i - 1, y)
 				# link them together
-				current.add_transition("E", next_tile)
-				next_tile.add_transition("W", current)
+				current.add_transition("W", next_tile)
+				next_tile.add_transition("E", current)
+				next_tile.set_connected()
 				i = i + 1
 
 			self.join_by_wall((x-i, y), (x-i-1, y), "W")
 
+	# Find the tile that has the lowest distance and 
+	# is unexplored. 
+	def determine_waypoint(self):
+		
+		# need a sorted list - 
+		# when we see a tile, we need to 
+		# put it in the list by its distance. 
+		# Then, once the list is fully built, 
+		# walk down the list until we get a tile
+		# not fully discovered. 
+
+		# Best idea: keep a large list in the robot
+		# of every node we can reach. Update it as we
+		# see things. Then getting the next waypoint 
+		# is easiest.
+		pass
+
+	# destination is an (x, y) tuple. 
+	def find_route(self, destination):
+		# We have a graph. 
+		# Our root is our current location. 
+		# begin a breadth-first search for the node. 
+		# we'll come across nodes already "examined", don't re-examine. 
+		# lets finish implementing this later... 
+		# and instead focus on an algo that finds the tile we want to explore. 
+		pass
 
 	def decide_move(self):
 		""" This function is called during "next_move". At this point, 
@@ -566,8 +614,18 @@ class Robot(object):
 		print("Current position: " + str(self.location))
 		print("Current heading: " + self.heading)
 
+		
+
 		self.update_maze_map(normalized_sensor_data)
-		self.maze_graph.print_maze_view(True)
+		self.maze_graph.print_maze_view()
+
+		# Now that we have all the data from sensors, we can 
+		# determine the next waypoint. 
+		waypoint = self.maze_graph.get_next_waypoint()
+		print("Waypoint: " + str(waypoint.x_coord) + ", " +  str(waypoint.y_coord))
+
+		#embed()	
+		
 		user_rotation = raw_input("Rotate (L/N/R): ")
 		user_movement = raw_input("Movement [-3 <= m <= 3]: ")
 
@@ -580,12 +638,7 @@ class Robot(object):
 			rotation_int = 90
 		else:
 			print("Invalid rotation. Passing 0.")
-		
-		# We're going to build a map of the maze. 
-		# tiles: 
-		#	-black	(unseen)
-		#	-grey 	(we "saw" it with sensors)
-		#	-white	(we've fully discovered it.)
+
 		rotation = rotation_int
 		movement = int(user_movement)
 

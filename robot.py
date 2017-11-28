@@ -1,5 +1,10 @@
 import numpy as np
+
+# comment out the os... we don't need it than for visualization
+import os
 from collections import deque
+
+# comment out the embed, we don't need it except for debugging. 
 from IPython import embed
 
 # The data structure that holds all the tiles
@@ -71,9 +76,9 @@ class MazeGraph(object):
 
 	# just get the colors from all the thingies and print them. 
 	# We're adding in our view of transitions now too. 
-	def print_maze_view(self):
+	def print_maze_view(self, robot_location):
 
-		# To see the transition, it suffices to start from the top, and build 
+		# To see the transitions, it suffices to start from the top, and build 
 		# two strings. One is the row with the tiles, and spaces between them
 		# (dashes indicate connection) and then another string, 
 		# with staffs to indicate vertical connection. If the connection is 
@@ -81,6 +86,8 @@ class MazeGraph(object):
 		#, and if the connection exists, then print the dash or staff. 
 		# since we're going from top to top right, then down, always look at the 
 		# right for a connection, and down. Then, we'll get a full graph. 
+
+		# also, a nice block to see where exactly the robot is. 
 
 		y = self.width - 1
 		x = 0
@@ -93,8 +100,11 @@ class MazeGraph(object):
 			bottom_str = "\t"
 
 			while(x < self.width):
-				knowledge_index = self.maze[(x, y)].get_knowledge_index()
-				to_print_str = to_print_str + alt_table[knowledge_index]
+				if([x, y] == robot_location):
+					to_print_str = to_print_str + unichr(0x2588)
+				else:
+					knowledge_index = self.maze[(x, y)].get_knowledge_index()
+					to_print_str = to_print_str + alt_table[knowledge_index]
 				connections = self.maze[(x, y)].get_transitions()
 				# check if "R" is in connections and if "S" is in connections
 				if("E" in connections):
@@ -759,7 +769,7 @@ class Robot(object):
 
 		# we don't need to really print the maze at this point, I think 
 # THIS IS WHERE YOU CAN TOGGLE MAZE VIEW
-		self.maze_graph.print_maze_view()
+		self.maze_graph.print_maze_view(self.location)
 
 		# Now that we have all the data from sensors, we can 
 		# determine the next waypoints - then decide which one to go to. 
@@ -785,9 +795,14 @@ class Robot(object):
 		print("Directions:")
 		num_steps = len(directions)
 		i = num_steps - 1
-		while(i >= 0):
+		num_printed = 0
+		while(i >= 0 and num_printed < 5):
 			print(directions[i].tuple())
 			i = i - 1
+			num_printed = num_printed + 1
+
+		if(num_printed < num_steps):
+			print("... (" + str(num_steps - num_printed) + " more in current path)")
 
 		immediate_action = self.calc_immediate_action(directions[num_steps - 1])
 		print("Proposed action: " + str(immediate_action))
@@ -796,6 +811,7 @@ class Robot(object):
 		# robot before it does something
 
 		raw_input("Waiting to proceed...")
+		unused_variable_01 = os.system('clear')
 
 		# We'll comment out everything here with a triple quote
 		#embed()	

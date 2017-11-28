@@ -553,6 +553,56 @@ class Robot(object):
 		# and instead focus on an algo that finds the tile we want to explore. 
 		pass
 
+	# destination is a tile ref. 
+	def calc_immediate_action(self, destination):
+		# determine our current heading
+
+		# determine which way we move from the current location 
+		# to get to the destination (N, E, S, W)
+
+		# get the tuple which is a tuple - rotation and int for move. 
+	
+		# key: (current_heading, direction to move)
+		# value: (rotation, steps)
+		action_dict = {
+			("up", "N"): (0, 1),
+			("up", "E"): (90, 1),
+			("up", "S"): (90, 0),
+			("up", "W"): (-90, 1), 
+
+			("right", "N"): (-90, 1),
+			("right", "E"): (0, 1),
+			("right", "S"): (90, 1),
+			("right", "W"):	(90, 0),
+
+			("down", "N"): (90, 0),
+			("down", "E"): (-90, 1),
+			("down", "S"): (0, 1),
+			("down", "W"): (90, 1),
+
+			("left", "N"): (90, 1),
+			("left", "E"): (90, 0), 
+			("left", "S"): (-90, 1), 
+			("left", "W"): (0, 1)
+		}
+
+		# determine if we need to go N, E, S, W
+		current = self.maze_graph.get_tile_ref(self.location[0], self.location[1])
+		direction = None
+		if(current.transition.get("N") == destination):
+			direction = "N"
+		elif(current.transition.get("E") == destination):
+			direction = "E"
+		elif(current.transition.get("S") == destination):
+			direction = "S"
+		elif(current.transition.get("W") == destination):
+			direction = "W"
+		else:
+			print("ERRROR ERROR ERROR - two tiles not connected!!")
+
+		return action_dict[(self.heading, direction)]
+
+
 	def decide_move(self):
 		""" This function is called during "next_move". At this point, 
 		the maze has been updated so the robot can figure out where to
@@ -613,6 +663,7 @@ class Robot(object):
 			The current issue is route planning. We need to know 
 			how to efficiently get between two places. 
 		"""	
+		pass
 	
 	def next_move(self, sensors):
         	'''
@@ -667,9 +718,17 @@ class Robot(object):
 			print(directions[i].tuple())
 			i = i - 1
 
+		immediate_action = self.calc_immediate_action(directions[num_steps - 1])
+		print("Proposed action: " + str(immediate_action))
 
+		# This is just here so that I can see everytime the state of the 
+		# robot before it does something
 
+		raw_input("Waiting to proceed...")
+
+		# We'll comment out everything here with a triple quote
 		#embed()	
+		"""
 		user_rotation = raw_input("Rotate (L/N/R): ")
 		user_movement = raw_input("Movement [-3 <= m <= 3]: ")
 
@@ -685,6 +744,10 @@ class Robot(object):
 
 		rotation = rotation_int
 		movement = int(user_movement)
+		"""
+		
+		rotation = immediate_action[0]
+		movement = immediate_action[1]
 
 		# we can update those values, since we're currently assuming 
 		self.heading = self.update_heading(self.heading, rotation)

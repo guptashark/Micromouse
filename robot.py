@@ -397,13 +397,14 @@ class Robot(object):
 		self.maze_dim = maze_dim
 		self.maze_graph = MazeGraph(maze_dim)
 		self.num_moves = 0
+
 		self.on_run_2 = False
 
 		start_square = self.maze_graph.get_tile_ref(0, 0)
 		start_square.set_connected()
 
 		# for recording maze_knowledge
-		self.file = open("performance_metrics/width-16.txt", 'w')
+		self.file = open("performance_metrics/width-12.txt", 'w')
 
 	def reset_for_run_2(self):
 		self.location = [0, 0]
@@ -418,6 +419,8 @@ class Robot(object):
 		end = self.maze_graph.get_tile_ref(self.maze_dim / 2, self.maze_dim/2)
 		self.center_directions = self.maze_graph.get_directions_to_waypoint(start, end)
 		self.path_len = len(self.center_directions)
+
+		
 
 	# for debugging in embedded mode: 
 	def get_tile_info(self, x, y):
@@ -831,10 +834,21 @@ class Robot(object):
 
 		if(self.on_run_2):
 			self.maze_graph.print_maze_view(self.location)
-			immediate_action = self.calc_current_action(self.center_directions[self.path_len - self.num_moves - 1])
+			immediate_action = self.calc_current_action(self.center_directions)
 
 			rotation = immediate_action[0]
 			movement = immediate_action[1]
+
+			# slice off the number of moves from the end.
+			if(movement == 1):
+				del self.center_directions[-1]
+			elif(movement == 2):
+				del self.center_directions[-1]
+				del self.center_directions[-1]
+			elif(movement == 3):
+				del self.center_directions[-1]
+				del self.center_directions[-1]
+				del self.center_directions[-1]
 
 			self.heading = self.update_heading(self.heading, rotation)
 			self.location = self.update_location(self.location, self.heading, movement)
@@ -856,11 +870,10 @@ class Robot(object):
 		completion_score = self.maze_graph.get_completion_index()
 		print("Move number: " + str(self.num_moves) + "\t" + "completion score: " + str(completion_score) + "%")
 # UNCOMMENT WHEN WE WANT TO GET TO THE SECOND MAZE THINGY
-		"""
+
 		if(completion_score > 75):
 			self.reset_for_run_2()
 			return 'Reset', 'Reset'
-		"""
 		# Delete this later, it's for running metrics on the robot's performance
 # IMORTANT FOR DEBUGING THINGY
 		self.file.write(str(completion_score) + "\n")

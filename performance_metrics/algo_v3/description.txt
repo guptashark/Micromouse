@@ -1,0 +1,19 @@
+This is the best algo we have so far
+when it comes to discovering the maze
+in the fastest time. It improves on 
+algo_v2 by taking jumps when it can. 
+This prevents it from using up a lot
+of time travelling between far nodes. 
+In fact, it cut down around 200 steps
+on the 16x16 maze. This is saving us
+around 7 whole points!! Not to mention
+that this also saves us a lot of time
+when getting to the center of our maze. 
+
+The maze times are as follows: 
+
+	12	14	16
+base:	655	822	NA
+algo1:	509	641	858
+algo2: 	374	487	648
+

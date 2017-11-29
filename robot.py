@@ -403,7 +403,7 @@ class Robot(object):
 		start_square.set_connected()
 
 		# for recording maze_knowledge
-		self.file = open("performance_metrics/width-12.txt", 'w')
+		self.file = open("performance_metrics/width-16.txt", 'w')
 
 	def reset_for_run_2(self):
 		self.location = [0, 0]
@@ -616,8 +616,12 @@ class Robot(object):
 		# and instead focus on an algo that finds the tile we want to explore. 
 		pass
 
-	# destination is a tile ref. 
-	def calc_immediate_action(self, destination):
+	# destination is a tile ref. So is current. 
+	# it is assumed that it's possible to get to destination 
+	# from current since they're right next to each other, 
+	# and in the list produced by get_directoins
+	# we'll pass in current as well, so that it's a reusable fn. 
+	def calc_immediate_action(self, current, heading, destination):
 		# determine our current heading
 
 		# determine which way we move from the current location 
@@ -650,7 +654,7 @@ class Robot(object):
 		}
 
 		# determine if we need to go N, E, S, W
-		current = self.maze_graph.get_tile_ref(self.location[0], self.location[1])
+		# current = self.maze_graph.get_tile_ref(self.location[0], self.location[1])
 		direction = None
 		if(current.transition.get("N") == destination):
 			direction = "N"
@@ -663,7 +667,73 @@ class Robot(object):
 		else:
 			print("ERRROR ERROR ERROR - two tiles not connected!!")
 
-		return action_dict[(self.heading, direction)]
+		return action_dict[heading, direction]
+	
+	# this is the updated version of getting an action, 
+	# designed to skip over squares when we can. 
+	def calc_current_action(self, directions):
+
+		# first, get the immediate action, 
+		# so that we know what our heading should be. 
+		
+		# Since update heading doesn't modify self, 
+		# we can use it here. 
+		action_rotation = None
+		action_move = 0
+		this_location = self.maze_graph.get_tile_ref(self.location[0], self.location[1])
+
+		current_len = len(directions)
+		# if bigger than or equal to 3
+		if(current_len >= 3):
+			immediate_action = self.calc_immediate_action(this_location, self.heading, directions[current_len - 1])
+			action_rotation = immediate_action[0]
+			action_move = immediate_action[1]
+
+			# In this case, nothing to do - we can't start on the path, we're making a 180. 
+			if(action_move == 0):
+				return immediate_action
+
+			new_heading = self.update_heading(self.heading, action_rotation)
+			
+			# now we can do the immediate action stuff to get the next tile from the first one. 
+			immediate_action_2 = self.calc_immediate_action(directions[current_len - 1], new_heading, directions[current_len - 2])
+			if((directions[current_len - 1].get_knowledge_index() == 4) and  immediate_action_2[0] == 0):
+				action_move = action_move + 1
+			else:
+				return action_rotation, action_move
+
+			# now try to go just one more step
+			immediate_action_3 = self.calc_immediate_action(directions[current_len - 2], new_heading, directions[current_len - 3])
+			if((directions[current_len - 2].get_knowledge_index() == 4) and immediate_action_3[0] == 0):
+				action_move = action_move + 1
+			else:
+				return action_rotation, action_move
+
+			return action_rotation, action_move
+		elif(current_len == 2):
+			immediate_action = self.calc_immediate_action(this_location, self.heading, directions[current_len - 1])
+			action_rotation = immediate_action[0]
+			action_move = immediate_action[1]
+
+			# In this case, nothing to do - we can't start on the path, we're making a 180. 
+			if(action_move == 0):
+				return immediate_action
+
+			new_heading = self.update_heading(self.heading, action_rotation)
+			
+			# now we can do the immediate action stuff to get the next tile from the first one. 
+			immediate_action_2 = self.calc_immediate_action(directions[current_len - 1], new_heading, directions[current_len - 2])
+			if((directions[current_len - 1].get_knowledge_index() == 4) and  immediate_action_2[0] == 0):
+				action_move = action_move + 1
+			else:
+				return action_rotation, action_move
+
+			return action_rotation, action_move
+		
+		# if it's just one step, not much to do.
+		else:
+			return self.calc_immediate_action(this_location, self.heading, directions[current_len - 1])
+
 
 
 	def decide_move(self):
@@ -761,7 +831,7 @@ class Robot(object):
 
 		if(self.on_run_2):
 			self.maze_graph.print_maze_view(self.location)
-			immediate_action = self.calc_immediate_action(self.center_directions[self.path_len - self.num_moves - 1])
+			immediate_action = self.calc_current_action(self.center_directions[self.path_len - self.num_moves - 1])
 
 			rotation = immediate_action[0]
 			movement = immediate_action[1]
@@ -782,14 +852,15 @@ class Robot(object):
 		print("================================================================")
 		print("Sensor data: " + str(normalized_sensor_data))
 #		print("Current position: " + str(self.location))
-#		print("Current heading: " + self.heading)
+		print("Current heading: " + self.heading)
 		completion_score = self.maze_graph.get_completion_index()
 		print("Move number: " + str(self.num_moves) + "\t" + "completion score: " + str(completion_score) + "%")
-
+# UNCOMMENT WHEN WE WANT TO GET TO THE SECOND MAZE THINGY
+		"""
 		if(completion_score > 75):
 			self.reset_for_run_2()
 			return 'Reset', 'Reset'
-
+		"""
 		# Delete this later, it's for running metrics on the robot's performance
 # IMORTANT FOR DEBUGING THINGY
 		self.file.write(str(completion_score) + "\n")
@@ -824,18 +895,18 @@ class Robot(object):
 
 # This whole section of printing might be kind of pointless
 		num_steps = len(directions)
-		"""
+		
 		i = num_steps - 1
-		num_printed = 0
-		while(i >= 0 and num_printed < 5):
+		while(i >= 0):
 			print(directions[i].tuple())
 			i = i - 1
-			num_printed = num_printed + 1
 
-		if(num_printed < num_steps):
-			print("... (" + str(num_steps - num_printed) + " more in current path)")
-		"""
-		immediate_action = self.calc_immediate_action(directions[num_steps - 1])
+
+# SHOULD PROBABLY DO A BRANCH OR SOMETHING BUT THIS IS NEW	
+		immediate_action = self.calc_current_action(directions)
+	
+# UNCOMMENT FOLLOWING TO GO BACK TO TIMES WHERE WE ONLY TOOK ONE STEP PER TURN
+#		immediate_action = self.calc_immediate_action(directions[num_steps - 1])
 		"""
 		print("Proposed action: " + str(immediate_action))
 

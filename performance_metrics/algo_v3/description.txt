@@ -14,6 +14,5 @@ The maze times are as follows:
 
 	12	14	16
 base:	655	822	NA
-algo1:	509	641	858
-algo2: 	374	487	648
-
+algo2:	509	641	858
+algo3: 	374	487	648

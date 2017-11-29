@@ -191,6 +191,9 @@ class MazeGraph(object):
 	# Going back to two waypoints
 	def get_next_waypoint(self):
 		
+		# first check to see if there are any neighbors at all
+		# that are not fully explored. 
+		
 		# min_1 is min distance 1
 		min_1 = 128	# bigger than any possible distance. 
 		waypoint_1 = None
@@ -404,7 +407,7 @@ class Robot(object):
 		start_square.set_connected()
 
 		# for recording maze_knowledge
-		self.file = open("performance_metrics/width-12.txt", 'w')
+		self.file = open("performance_metrics/width-16.txt", 'w')
 
 	def reset_for_run_2(self):
 		self.location = [0, 0]
@@ -737,7 +740,31 @@ class Robot(object):
 		else:
 			return self.calc_immediate_action(this_location, self.heading, directions[current_len - 1])
 
+	def get_one_step_point(self):
+		
+		current_tile = self.maze_graph.get_tile_ref(self.location[0], self.location[1])
 
+		next_tile = current_tile.transition.get("N")
+		if(next_tile != None):
+			if(next_tile.get_knowledge_index() < 4):
+				return next_tile
+
+		next_tile = current_tile.transition.get("E")
+		if(next_tile != None):
+			if(next_tile.get_knowledge_index() < 4):
+				return next_tile
+
+		next_tile = current_tile.transition.get("S")
+		if(next_tile != None):
+			if(next_tile.get_knowledge_index() < 4):
+				return next_tile
+		
+		next_tile = current_tile.transition.get("W")
+		if(next_tile != None):
+			if(next_tile.get_knowledge_index() < 4):
+				return next_tile
+
+		return None
 
 	def decide_move(self):
 		""" This function is called during "next_move". At this point, 
@@ -871,9 +898,11 @@ class Robot(object):
 		print("Move number: " + str(self.num_moves) + "\t" + "completion score: " + str(completion_score) + "%")
 # UNCOMMENT WHEN WE WANT TO GET TO THE SECOND MAZE THINGY
 
-		if(completion_score > 75):
+		"""
+		if(completion_score > 99):
 			self.reset_for_run_2()
 			return 'Reset', 'Reset'
+		"""
 		# Delete this later, it's for running metrics on the robot's performance
 # IMORTANT FOR DEBUGING THINGY
 		self.file.write(str(completion_score) + "\n")
@@ -887,36 +916,49 @@ class Robot(object):
 
 		# Now that we have all the data from sensors, we can 
 		# determine the next waypoints - then decide which one to go to. 
-		waypoints = self.maze_graph.get_next_waypoint()
 		
+		# first see if we can explore a tile immediate to us that is not fully 
+		# discovered. 
+		
+		immediate_action = None
+
+		one_step_point = self.get_one_step_point()
+
 		curr_tile = self.maze_graph.get_tile_ref(self.location[0], self.location[1])
-		directions_1 = self.maze_graph.get_directions_to_waypoint(curr_tile, waypoints[0])
-		directions_2 = self.maze_graph.get_directions_to_waypoint(curr_tile, waypoints[1])
 
-		directions = None
-		waypoint = None
+		if(one_step_point != None):
 
-		if(len(directions_2) + 6 < len(directions_1)):
-			directions = directions_2
-			waypoint = waypoints[1]
-			
+			immediate_action=self.calc_immediate_action(curr_tile, self.heading, one_step_point)
 		else:
-			directions = directions_1
-			waypoint = waypoints[0]
+			waypoints = self.maze_graph.get_next_waypoint()
 		
-		print("Waypoint: " + str(waypoint.x_coord) + ", " +  str(waypoint.y_coord))
+			directions_1 = self.maze_graph.get_directions_to_waypoint(curr_tile, waypoints[0])
+			directions_2 = self.maze_graph.get_directions_to_waypoint(curr_tile, waypoints[1])
+
+			directions = None
+			waypoint = None
+
+			if(len(directions_2) + 6 < len(directions_1)):
+				directions = directions_2
+				waypoint = waypoints[1]
+			
+			else:
+				directions = directions_1
+				waypoint = waypoints[0]
+		
+			print("Waypoint: " + str(waypoint.x_coord) + ", " +  str(waypoint.y_coord))
 
 # This whole section of printing might be kind of pointless
-		num_steps = len(directions)
-		
-		i = num_steps - 1
-		while(i >= 0):
-			print(directions[i].tuple())
-			i = i - 1
-
+			num_steps = len(directions)
+			"""	
+			i = num_steps - 1
+			while(i >= 0):
+				print(directions[i].tuple())
+				i = i - 1
+			"""
 
 # SHOULD PROBABLY DO A BRANCH OR SOMETHING BUT THIS IS NEW	
-		immediate_action = self.calc_current_action(directions)
+			immediate_action = self.calc_current_action(directions)
 	
 # UNCOMMENT FOLLOWING TO GO BACK TO TIMES WHERE WE ONLY TOOK ONE STEP PER TURN
 #		immediate_action = self.calc_immediate_action(directions[num_steps - 1])

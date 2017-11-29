@@ -1,0 +1,29 @@
+This is the latest improvement 
+on our algorithm - It does not
+stop until it has explored every
+single node that it can see. It
+is blazingly fast - it makes the
+decision to explore closeby nodes
+over going the long range to explore
+nodes to the center. The rational is
+that exploring nodes that we are
+immediately next to is very useful 
+since they could help us find a 
+faster path - even one that is
+at an edge. By weighing all nodes
+like this, the algo hardly wastes
+any time in solving the maze - 
+using a move for every tile, and 
+then some extra for travelling
+along already visited tiles to 
+explore new ones. 
+
+The maze times are as follows:
+
+
+	12	14	16
+base:	655	822	NA
+algo2:	509	641	858
+algo3: 	374	487	648
+algo4:	185	232	305
+

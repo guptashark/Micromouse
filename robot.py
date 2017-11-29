@@ -640,21 +640,21 @@ class Robot(object):
 		action_dict = {
 			("up", "N"): (0, 1),
 			("up", "E"): (90, 1),
-			("up", "S"): (90, 0),
+			("up", "S"): (0, -1),
 			("up", "W"): (-90, 1), 
 
 			("right", "N"): (-90, 1),
 			("right", "E"): (0, 1),
 			("right", "S"): (90, 1),
-			("right", "W"):	(90, 0),
+			("right", "W"):	(0, -1),
 
-			("down", "N"): (90, 0),
+			("down", "N"): (0, -1),
 			("down", "E"): (-90, 1),
 			("down", "S"): (0, 1),
 			("down", "W"): (90, 1),
 
 			("left", "N"): (90, 1),
-			("left", "E"): (90, 0), 
+			("left", "E"): (0, -1), 
 			("left", "S"): (-90, 1), 
 			("left", "W"): (0, 1)
 		}
@@ -704,14 +704,14 @@ class Robot(object):
 			# now we can do the immediate action stuff to get the next tile from the first one. 
 			immediate_action_2 = self.calc_immediate_action(directions[current_len - 1], new_heading, directions[current_len - 2])
 			if((directions[current_len - 1].get_knowledge_index() == 4) and  immediate_action_2[0] == 0):
-				action_move = action_move + 1
+				action_move = action_move + immediate_action_2[1]
 			else:
 				return action_rotation, action_move
 
 			# now try to go just one more step
 			immediate_action_3 = self.calc_immediate_action(directions[current_len - 2], new_heading, directions[current_len - 3])
 			if((directions[current_len - 2].get_knowledge_index() == 4) and immediate_action_3[0] == 0):
-				action_move = action_move + 1
+				action_move = action_move + immediate_action_3[1]
 			else:
 				return action_rotation, action_move
 
@@ -730,7 +730,7 @@ class Robot(object):
 			# now we can do the immediate action stuff to get the next tile from the first one. 
 			immediate_action_2 = self.calc_immediate_action(directions[current_len - 1], new_heading, directions[current_len - 2])
 			if((directions[current_len - 1].get_knowledge_index() == 4) and  immediate_action_2[0] == 0):
-				action_move = action_move + 1
+				action_move = action_move + immediate_action_2[1]
 			else:
 				return action_rotation, action_move
 

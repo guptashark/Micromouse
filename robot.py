@@ -188,7 +188,7 @@ class MazeGraph(object):
 		percent_val = int(dec_val * 100)
 		return percent_val
 
-	# Now gives you two waypoints to pick from. 	
+	# Going back to two waypoints
 	def get_next_waypoint(self):
 		
 		# min_1 is min distance 1
@@ -397,6 +397,8 @@ class Robot(object):
 		self.maze_dim = maze_dim
 		self.maze_graph = MazeGraph(maze_dim)
 		self.num_moves = 0
+		self.on_run_2 = False
+
 		start_square = self.maze_graph.get_tile_ref(0, 0)
 		start_square.set_connected()
 
@@ -408,7 +410,14 @@ class Robot(object):
 		self.heading = 'up'
 		self.num_moves = 0
 		self.file.close()
-		
+
+		self.on_run_2 = True
+
+		# set the directions
+		start = self.maze_graph.get_tile_ref(0, 0)
+		end = self.maze_graph.get_tile_ref(self.maze_dim / 2, self.maze_dim/2)
+		self.center_directions = self.maze_graph.get_directions_to_waypoint(start, end)
+		self.path_len = len(self.center_directions)
 
 	# for debugging in embedded mode: 
 	def get_tile_info(self, x, y):
@@ -718,8 +727,6 @@ class Robot(object):
 			how to efficiently get between two places. 
 		"""	
 		pass
-
-	
 	
 	def next_move(self, sensors):
         	'''
@@ -751,6 +758,25 @@ class Robot(object):
 
 		# we need to normalize sensor data to N, E, S, W so that
 		# we can then update the mazeview. 
+
+		if(self.on_run_2):
+			self.maze_graph.print_maze_view(self.location)
+			immediate_action = self.calc_immediate_action(self.center_directions[self.path_len - self.num_moves - 1])
+
+			rotation = immediate_action[0]
+			movement = immediate_action[1]
+
+			self.heading = self.update_heading(self.heading, rotation)
+			self.location = self.update_location(self.location, self.heading, movement)
+			self.num_moves = self.num_moves + 1
+			raw_input("Waiting for go ahead...")
+			unused_variable_01 = os.system('clear')
+
+			return rotation, movement
+
+
+			
+
 		normalized_sensor_data = self.normalize_sensor_data(sensors, self.heading)
 # UNCOMMENT AS NEEDED
 		print("================================================================")
@@ -759,6 +785,10 @@ class Robot(object):
 #		print("Current heading: " + self.heading)
 		completion_score = self.maze_graph.get_completion_index()
 		print("Move number: " + str(self.num_moves) + "\t" + "completion score: " + str(completion_score) + "%")
+
+		if(completion_score > 75):
+			self.reset_for_run_2()
+			return 'Reset', 'Reset'
 
 		# Delete this later, it's for running metrics on the robot's performance
 # IMORTANT FOR DEBUGING THINGY
@@ -781,6 +811,7 @@ class Robot(object):
 
 		directions = None
 		waypoint = None
+
 		if(len(directions_2) + 6 < len(directions_1)):
 			directions = directions_2
 			waypoint = waypoints[1]
@@ -788,7 +819,6 @@ class Robot(object):
 		else:
 			directions = directions_1
 			waypoint = waypoints[0]
-
 		
 		print("Waypoint: " + str(waypoint.x_coord) + ", " +  str(waypoint.y_coord))
 

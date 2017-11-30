@@ -409,6 +409,197 @@ class Robot(object):
 		# for recording maze_knowledge
 		self.file = open("performance_metrics/width-16.txt", 'w')
 
+	def build_powernode(self, tile_ref):
+		
+		# The graph from maze_graph is now
+		# going to be unusable for exploration. 
+		
+		north_tile_1 = tile_ref.transition.get("N")
+		if(north_tile_1 != None): 
+			north_tile_2 = north_tile_1.transition.get("N")
+			if(north_tile_2 != None):
+				tile_ref.transition["N2"] = north_tile_2
+				north_tile_3 = north_tile_2.transition.get("N")
+				if(north_tile_3 != None):
+					tile_ref.transition["N3"] = north_tile_3
+
+		east_tile_1 = tile_ref.transition.get("E")
+		if(east_tile_1 != None): 
+			east_tile_2 = east_tile_1.transition.get("E")
+			if(east_tile_2 != None):
+				tile_ref.transition["E2"] = east_tile_2
+				east_tile_3 = east_tile_2.transition.get("E")
+				if(east_tile_3 != None):
+					tile_ref.transition["E3"] = east_tile_3
+
+		south_tile_1 = tile_ref.transition.get("S")
+		if(south_tile_1 != None): 
+			south_tile_2 = south_tile_1.transition.get("S")
+			if(south_tile_2 != None):
+				tile_ref.transition["S2"] = south_tile_2
+				south_tile_3 = south_tile_2.transition.get("S")
+				if(south_tile_3 != None):
+					tile_ref.transition["S3"] = south_tile_3
+
+
+		west_tile_1 = tile_ref.transition.get("W")
+		if(west_tile_1 != None): 
+			west_tile_2 = west_tile_1.transition.get("W")
+			if(west_tile_2 != None):
+				tile_ref.transition["W2"] = west_tile_2
+				west_tile_3 = west_tile_2.transition.get("W")
+				if(west_tile_3 != None):
+					tile_ref.transition["W3"] = west_tile_3
+	
+	# We might as well have this build the dict with all the nodes
+	def build_powergraph(self):
+		
+		powergraph = {}
+
+		
+
+		x = 0
+		y = 0
+
+		while(x < self.maze_dim):
+			y = 0
+			while(y < self.maze_dim):
+				current = self.maze_graph.get_tile_ref(x, y)
+				# Build the powernode. 
+				self.build_powernode(current)
+			
+				# Add it to the powergraph, infinite distance, no parent.
+				powergraph[current] = [1000, None]
+
+				y = y + 1
+				
+			x = x + 1
+
+		return powergraph
+	
+	def run_dijkstra(self, powergraph):
+		
+		# Set of *all* nodes. 
+		# dict 
+		#	key: tile_ref
+		#	value: (distance, parent, unvisited)
+		
+		# is what we get in powergraph. 
+
+		# Set the current node - clearly it's the bottom left node. 
+		current = self.maze_graph.get_tile_ref(0, 0)	
+		
+		powergraph[current] = [0, None]
+
+		# Nodes go in here once they're visited. From here, we can get what we need. 
+		visited_graph = {}
+
+		while(len(powergraph) > 0): 
+			current = None
+		
+			smallest_dist = 1001
+			
+			for key in powergraph:
+				val = powergraph[key]
+				if(val[0] < smallest_dist):
+					smallest_dist = val[0]
+					current = key
+
+
+
+			# Now we've got current as the correct tile. 
+			curr_val = powergraph.pop(current)
+			visited_graph[current] = curr_val
+			
+			for key in current.transition:
+
+				neighbor = current.transition[key]
+				
+				if(neighbor in powergraph):
+					neighbor_val = powergraph[neighbor]
+					neighbor_dist = neighbor_val[0]
+					if (neighbor_dist > curr_val[0] + 1):
+						neighbor_val[0] = curr_val[0] + 1
+						neighbor_val[1] = current
+
+		return visited_graph
+
+	def get_dijkstra_directions(self, visited_graph):
+		my_lst = []
+		# As we run down the list, we can reverse it at the end. 
+
+		current = self.maze_graph.get_tile_ref(self.maze_dim / 2, self.maze_dim /2)
+		current_val = visited_graph[current]
+
+		#print(current_val)
+
+		while(current_val[1] != None):
+			prev_tile = current_val[1]
+			#print(visited_graph[prev_tile])
+			#raw_input("wait...")
+
+			# Now get the move from prev_tile to current. 
+			for key in prev_tile.transition:
+				if(prev_tile.transition[key] == current):
+					my_lst.append(key)
+
+			current = prev_tile
+			current_val = visited_graph[current]
+
+		my_lst.reverse()
+		return my_lst
+	
+	def build_complete_directions(self, dij_directions):
+
+		my_heading = "up"
+	
+		complete_directions = []	
+
+		# We should never encounter anything that tells us
+		# to go backwards. 
+
+		# key: (current heading, direction to move)
+		# value: (rotation, and new heading)
+		my_rotation_dict = {
+			("up", "W"): (-90, "left"),
+			("up", "N"): (0, "up"),
+			("up", "E"): (90, "right"),
+
+			("right", "N"): (-90, "up"),
+			("right", "E"): (0, "right"),
+			("right", "S"): (90, "down"), 
+
+			("down", "E"): (-90, "right"),
+			("down", "S"): (0, "down"),
+			("down", "W"): (90, "left"),
+
+			("left", "S"): (-90, "down"),
+			("left", "W"): (0, "left"), 
+			("left", "N"): (90, "up")
+		}
+
+		for item in dij_directions: 
+			
+			my_dir = None
+			my_move = None
+			# if it's just N, E, S, W or something
+			if(len(item) == 1):
+				my_dir = item
+				my_move = 1
+			else:
+				my_dir = item[0]
+				my_move = int(item[1])
+				
+			my_val = my_rotation_dict[(my_heading, my_dir)]
+			my_heading = my_val[1]
+
+			complete_directions.append((my_val[0], my_move))
+
+		return complete_directions
+
+
+
+				
 	def reset_for_run_2(self):
 		self.location = [0, 0]
 		self.heading = 'up'
@@ -422,6 +613,25 @@ class Robot(object):
 		end = self.maze_graph.get_tile_ref(self.maze_dim / 2, self.maze_dim/2)
 		self.center_directions = self.maze_graph.get_directions_to_waypoint(start, end)
 		self.path_len = len(self.center_directions)
+
+		# Build the powergraph - each node has up to 9 edges, and we then run 
+		# dijkstra's to find the path. 
+		powergraph = self.build_powergraph()
+
+		# now that we have the powergraph, we can run dijkstra's. 
+		visited_graph = self.run_dijkstra(powergraph)
+		# Assuming dijkstra ran correctly... 
+		# we can use this visited graph to engineer our directions. 
+		dijkstra_directions = self.get_dijkstra_directions(visited_graph)
+
+		# Now we need to take these directions and turn them into something the robot 
+		# can understand... 
+
+		# essentially build a list of hard coded directions. 
+		complete_directions  = self.build_complete_directions(dijkstra_directions)
+
+		self.second_round_directions = complete_directions
+		
 
 		
 
@@ -861,8 +1071,9 @@ class Robot(object):
 
 		if(self.on_run_2):
 			self.maze_graph.print_maze_view(self.location)
+			"""
 			immediate_action = self.calc_current_action(self.center_directions)
-
+			
 			rotation = immediate_action[0]
 			movement = immediate_action[1]
 
@@ -876,6 +1087,11 @@ class Robot(object):
 				del self.center_directions[-1]
 				del self.center_directions[-1]
 				del self.center_directions[-1]
+			"""
+			current_action_run_2_var = self.second_round_directions[0]
+			rotation = current_action_run_2_var[0]
+			movement = current_action_run_2_var[1]
+			self.second_round_directions.pop(0)
 
 			self.heading = self.update_heading(self.heading, rotation)
 			self.location = self.update_location(self.location, self.heading, movement)
@@ -945,7 +1161,12 @@ class Robot(object):
 			else:
 				directions = directions_1
 				waypoint = waypoints[0]
-		
+
+			# WE"RE DONE EXPLORING!! 	
+			if(waypoint == None): 	
+				self.reset_for_run_2()
+				return 'Reset', 'Reset'
+					
 			print("Waypoint: " + str(waypoint.x_coord) + ", " +  str(waypoint.y_coord))
 
 # This whole section of printing might be kind of pointless

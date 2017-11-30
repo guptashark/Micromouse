@@ -3,7 +3,14 @@ backwards - it now doesn't have to
 waste a move doing 180 degree turns. 
 This is very useful and shaves off 
 a fair bit of time, around 1 point
-for the runs. 
+for the runs. There was a concern
+that the robot could get trapped in 
+a dead end - but this isn't possible. 
+If the robot backed into a dead end, 
+that tile was connected to the graph
+of reachable nodes. This is only 
+possible if the robot saw into the 
+dead end in the first place. 
 
 The maze times are as follows:
 

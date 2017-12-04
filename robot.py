@@ -101,7 +101,8 @@ class MazeGraph(object):
 
 			while(x < self.width):
 				if([x, y] == robot_location):
-					to_print_str = to_print_str + unichr(0x2588)
+                                        # CHANGE BACK WHEN SAFE
+					to_print_str = to_print_str + "$"#unichr(0x2588)
 				else:
 					knowledge_index = self.maze[(x, y)].get_knowledge_index()
 					to_print_str = to_print_str + alt_table[knowledge_index]
@@ -1097,6 +1098,7 @@ class Robot(object):
 			self.location = self.update_location(self.location, self.heading, movement)
 			self.num_moves = self.num_moves + 1
 			raw_input("Waiting for go ahead...")
+                        # CHANGE BACK TO CLEAR WHEN SAFE
 			unused_variable_01 = os.system('clear')
 
 			return rotation, movement
@@ -1190,6 +1192,7 @@ class Robot(object):
 		# robot before it does something
 		"""
 		raw_input("Waiting to proceed...")
+                # USE PROPER CLEAR WHEN DONE
 		unused_variable_01 = os.system('clear')
 
 		# We'll comment out everything here with a triple quote

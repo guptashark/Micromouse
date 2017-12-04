@@ -39,7 +39,20 @@ class MazeView(object):
 		heading_output = "Heading: " + heading
 		output_1 = location_output + "\t" + heading_output
 
-		output_2 = "Sensors: " + str(normalized_sensors)
+		arrow_dict = {
+			"N": unichr(0x25B2),
+			"E": unichr(0x25B6),
+			"S": unichr(0x25BC),
+			"W": unichr(0x25C0)
+		}
+		unicode_arrow = arrow_dict[heading]
+
+		sensor_N = str(normalized_sensors[0])
+		sensor_E = str(normalized_sensors[1])
+		sensor_S = str(normalized_sensors[2])
+		sensor_W = str(normalized_sensors[3])
+
+		output_2 = "\n\t" + sensor_N + "\n" + sensor_W + "\t" + unicode_arrow + "\t" + sensor_E + "\n\t" + sensor_S
 
 		print(output_1)
 		print(output_2)

@@ -90,6 +90,8 @@ class ManualControl(object):
 
 class Robot_v2(object):
 	def __init__(self, maze_dim):
+		
+		self.move_num = 1
 
 		self.location = [0, 0]
 
@@ -138,8 +140,7 @@ class Robot_v2(object):
 	# 	* extended = tile transitions have max of
 	# 	  12 entries in dict (N1, N2, N3, ..., W3)
 	def update_graph(self, norm_sensors):
-		
-		# fairly clean up the code. 
+		# Readability fix
 		sensors = norm_sensors	
 		# View North
 		x = self.location[0]
@@ -202,17 +203,28 @@ class Robot_v2(object):
 	# Essentially a helper to properly update the 
 	# maze. 
 	def normalize_sensors(self, sensors):
+		
+		
 		# There could be a better way to do this... 
 		# but take the index and do weird slicing. 
 		slice_lookup = [1, 0, 3, 2]
 		i = slice_lookup[self.heading_index]
 	
 		# First order of business - append none to a fresh copy. 
-		local_sensors = list(sensors)
-		local_sensors.append(None)
+		logic_sensors = list(sensors)
+		view_sensors = list(sensors)
 
-		normalized_sensors = local_sensors[i:] + local_sensors[:i]
-		return normalized_sensors
+		logic_sensors.append(None)
+		view_sensors.append(None)
+
+		# Once we realized that front sensor data is useless 
+		# after the first move. 
+		if(self.move_num != 1):
+			logic_sensors[1] = None
+
+		norm_logic_sensors = logic_sensors[i:] + logic_sensors[:i]
+		norm_view_sensors = view_sensors[i:] + view_sensors[:i]
+		return norm_logic_sensors, norm_view_sensors
 
 	# Do this first, so that update_location works. 
 	def update_heading(self, rotation):
@@ -240,8 +252,8 @@ class Robot_v2(object):
 		# gets before passing it to viewers and algos. 
 		# The robot *is* the driver to the real world. 
 
-		normalized_sensors = self.normalize_sensors(sensors)
-		self.update_graph(normalized_sensors)
+		logic_sensors, view_sensors = self.normalize_sensors(sensors)
+		self.update_graph(logic_sensors)
 
 		# Pass the data necessary to render
 		# info on the maze before the algo runs. 
@@ -250,7 +262,7 @@ class Robot_v2(object):
 			"graph": None,
 			"heading": self.heading,
 			"location": self.location,
-			"normalized_sensors": normalized_sensors,
+			"normalized_sensors": view_sensors,
 			"maze": self.maze
 		}
 
@@ -267,4 +279,5 @@ class Robot_v2(object):
 		rotation, movement = self.algo.next_move(**info_to_algo)
 		self.update_heading(rotation)
 		self.update_location(movement)
+		self.move_num += 1
 		return rotation, movement

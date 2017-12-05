@@ -241,9 +241,6 @@ class Robot_v2(object):
 				current = self.maze.get_tile(fm_x, 2)
 				current.add_wall("S3")
 	
-
-			pass
-
 		# figure out the axis we're working with. 
 		if((self.heading == "N") or (self.heading == "S")):
 			x_min = self.location[0] - norm_sensors[3]	

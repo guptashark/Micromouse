@@ -5,6 +5,40 @@ class MazeView(object):
 	# maze_dim as a param makes everything easier. 	
 	def __init__(self, maze_dim):
 		self.maze_dim = maze_dim
+	
+	def print_maze_structure(self, graph):
+		
+		# Our box drawing dict
+		"""
+		Single direction, or dead end
+		N = 0x2579
+		E = 0x257A
+		S = 0x257B
+		W = 0x2578
+
+		known as a corner
+		NE = 0x2517
+		ES = 0x250F
+		SW = 0x2513
+		WN = 0x251B
+
+		known as a T intersect
+		WNE = 0x253B
+		NES = 0x2523
+		ESW = 0x2533
+		SWN = 0x252B
+
+		Full cross
+		0x254B
+		"""
+
+		box_char = {
+			# Know nothing = space
+			# N = 0x2579
+			# E = 0x
+			#
+
+		for y in xrange(self.maze_dimj)
 
 	# Print before the algo runs, to see what the algo
 	# is working with. 
@@ -39,6 +73,7 @@ class MazeView(object):
 
 		# Now we print the maze itself. 
 		current_str = ""
+		# since we're starting from the top... we're doing maze_dim - 1
 		for y in xrange(self.maze_dim - 1, -1, -1):
 			for x in xrange(self.maze_dim):
 				current = maze.get_tile(x, y)

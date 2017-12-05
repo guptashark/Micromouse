@@ -215,13 +215,71 @@ class Robot_v2(object):
 			x_max = self.location[0] + norm_sensors[1]
 			y = self.location[1]
 			print("Processing horiz: " + str(x_min) + " to " + str(x_max))
+			for i in xrange(x_max - x_min - 1):
+				# stitch these together with E2 and W2
+				current = self.maze.get_tile(x_min + i, y)
+				next_tile = self.maze.get_tile(x_min + i + 2, y)
+				current.add_connection("E2", next_tile)
+				next_tile.add_connection("W2", current)
+
+			for i in xrange(x_max - x_min - 2):
+				# stitch these together with E3 and W3
+				current = self.maze.get_tile(x_min + i, y)
+				next_tile = self.maze.get_tile(x_min + i + 3, y)
+				current.add_connection("E3", next_tile)
+				next_tile.add_connection("W3", current)
+		
+			# in case x_max - x_min is 0, the standard
+			# maze update will have taken care of it. 
+
+			if((x_max - x_min) >= 1):
+				current = self.maze.get_tile(x_max - 1, y)
+				current.add_wall_list(["E2", "E3"])
+				
+				current = self.maze.get_tile(x_min + 1, y)
+				current.add_wall_list(["W2", "W3"])
+
+			elif((x_max - x_min) >= 2):
+				current = self.maze.get_tile(x_max - 2, y)
+				current.add_wall("E3")
+
+				current = self.maze.get_tile(x_min + 2, y)
+				current.add_wall("W3")
+			
 		else:
 			y_min = self.location[1] - norm_sensors[2]
 			y_max = self.location[1] + norm_sensors[0]
 			x = self.location[0]
 			print("Processing vert: " + str(y_min) + " to " + str(y_max))
 
+			for i in xrange(y_max - y_min - 1):
+				# stitch these together with N2 and S2
+				current = self.maze.get_tile(x, y_min + i)
+				next_tile = self.maze.get_tile(x, y_min + i + 2)
+				current.add_connection("N2", next_tile)
+				next_tile.add_connection("S2", current)
 
+			for i in xrange(y_max - y_min - 2):
+				# stitch these together with N3 and S3
+				current = self.maze.get_tile(x, y_min + i)
+				next_tile = self.maze.get_tile(x, y_min + i + 3)
+				current.add_connection("N3", next_tile)
+				next_tile.add_connection("S3", current)
+
+			if((y_max - y_min) >= 1):
+				current = self.maze.get_tile(x, y_max - 1)
+				current.add_wall_list(["N2", "N3"])
+				
+				current = self.maze.get_tile(x, y_min + 1)
+				current.add_wall_list(["S2", "S3"])
+			
+			if((y_max - y_min) >= 2):
+				current = self.maze.get_tile(x, y_max - 2)
+				current.add_wall("N3")
+				
+				current = self.maze.get_tile(x, y_min + 2)
+				current.add_wall("S3")
+	
 	# Essentially a helper to properly update the 
 	# maze. 
 	def normalize_sensors(self, sensors):

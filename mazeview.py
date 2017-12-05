@@ -31,15 +31,16 @@ class MazeView(object):
 		Full cross
 		0x254B
 		"""
-
+	
+		"""
 		box_char = {
 			# Know nothing = space
 			# N = 0x2579
 			# E = 0x
 			#
 
-		for y in xrange(self.maze_dimj)
-
+		for y in xrange(self.maze_dim)
+		"""
 	# Print before the algo runs, to see what the algo
 	# is working with. 
 	def pre_algo_view(self, **kwargs):

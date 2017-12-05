@@ -65,28 +65,57 @@ class MazeGraph(object):
 	def get_tile(self, x, y):
 		return self.data[x * self.maze_dim + y]
 
+class MazeAlgorithm(object):
+
+	def key_to_action_tuple(self, move_key, heading):
+		
+		action_direction = move_key[0]
+		action_steps = int(move_key[1])
+
+		# same direction	
+		if(action_direction == heading):
+			return (0, action_steps)
+
+		opposite_dict = {
+			"N": "S",
+			"E": "W", 
+			"S": "N", 
+			"W": "E"
+		}
+
+		# opposite directions
+		if(opposite_dict[action_direction] == heading):
+			return (0, -1 * action_steps)
+
+		# need to make a turn, 
+		# key: ("robot heading", "move direction")
+		# value: rotation
+		turn_dict = {
+			("N", "E"): 90,
+			("E", "S"): 90,
+			("S", "W"): 90,
+			("W", "N"): 90,
+
+			("N", "W"): -90,
+			("E", "N"): -90,
+			("S", "E"): -90,
+			("W", "S"): -90
+		}
+
+		rotation = turn_dict[(heading, action_direction)]
+		return (rotation, action_steps)
+
+
 # One potential "algorithm"
-class ManualControl(object):
+class ManualControl(MazeAlgorithm):
 	def __init__(self, maze_dim):
 		self.maze_dim = maze_dim
 
-		# in case user is done controlling manually. 
-		self.default_behavior = False
-
 	def next_move(self, **kwargs):
-		
-		if(self.default_behavior):
-			return 0, 0
-
-		rotation = int(raw_input("rotation: "))
-		movement = int(raw_input("movement: "))
-
-		if(rotation == -1):
-			self.default_behavior = True
-			rotation = 0
-			movement = 0
-
-		return rotation, movement
+		heading = kwargs["heading"]
+		action = raw_input("Cardinal Action: ")
+		ret_val = self.key_to_action_tuple(action, heading)
+		return ret_val
 
 class Robot_v2(object):
 	def __init__(self, maze_dim):
@@ -364,6 +393,8 @@ class Robot_v2(object):
 		# gets before passing it to viewers and algos. 
 		# The robot *is* the driver to the real world. 
 
+		# sensors for actual computation use
+		# vs what user sees to ensure robot sees correctly
 		logic_sensors, view_sensors = self.normalize_sensors(sensors)
 		self.update_graph(logic_sensors)
 
@@ -371,11 +402,10 @@ class Robot_v2(object):
 		# info on the maze before the algo runs. 
 		# (To see what the input to the algo is)
 		info_to_view = {
-			"graph": None,
+			"maze": self.maze,
 			"heading": self.heading,
 			"location": self.location,
-			"normalized_sensors": view_sensors,
-			"maze": self.maze
+			"normalized_sensors": view_sensors
 		}
 
 		self.view.pre_algo_view(**info_to_view)
@@ -383,12 +413,13 @@ class Robot_v2(object):
 		# pass the graph, heading and location. 
 		# Extendible. 
 		info_to_algo = {
-			"graph": None,
+			"graph": self.maze,
 			"heading": self.heading,
 			"location": self.location
 		}
 
 		rotation, movement = self.algo.next_move(**info_to_algo)
+
 		self.update_heading(rotation)
 		self.update_location(movement)
 		self.move_num += 1

@@ -207,6 +207,41 @@ class Robot_v2(object):
 		if(self.move_num == 1): 
 			# Do the special thing for the northbound tiles. 
 			print("Doing special first move processing")
+			# all vars in this block are prefixed with "fm"
+			# for "first move" 
+			fm_y_min = 0
+			fm_y_max = norm_sensors[0]
+			fm_x = 0
+
+			for i in xrange(fm_y_max - 1):
+				# stitch these together with N2 and S2
+				current = self.maze.get_tile(fm_x, i)
+				next_tile = self.maze.get_tile(fm_x, i + 2)
+				current.add_connection("N2", next_tile)
+				next_tile.add_connection("S2", current)
+
+			for i in xrange(fm_y_max  - 2):
+				# stitch these together with N3 and S3
+				current = self.maze.get_tile(fm_x, i)
+				next_tile = self.maze.get_tile(fm_x, i + 3)
+				current.add_connection("N3", next_tile)
+				next_tile.add_connection("S3", current)
+
+			if(fm_y_max >= 1):
+				current = self.maze.get_tile(fm_x, fm_y_max - 1)
+				current.add_wall_list(["N2", "N3"])
+				
+				current = self.maze.get_tile(fm_x, 1)
+				current.add_wall_list(["S2", "S3"])
+			
+			if(fm_y_max  >= 2):
+				current = self.maze.get_tile(fm_x, fm_y_max - 2)
+				current.add_wall("N3")
+				
+				current = self.maze.get_tile(fm_x, 2)
+				current.add_wall("S3")
+	
+
 			pass
 
 		# figure out the axis we're working with. 

@@ -227,7 +227,7 @@ class Robot_v2(object):
 				current = self.maze.get_tile(x - sensors[3], y)
 				next_tile = self.maze.get_tile(x - sensors[3] - 1, y)
 				current.add_wall_list(["W1", "W2", "W3"])
-				next_tile.add_wall_list(["E1", "W2", "W3"])
+				next_tile.add_wall_list(["E1", "E2", "E3"])
 
 		self.second_pass_update(norm_sensors)
 

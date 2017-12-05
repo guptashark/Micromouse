@@ -1,4 +1,4 @@
-
+from mazeview import MazeView
 
 class MazeTile(object):
 	
@@ -59,7 +59,8 @@ class MazeGraph(object):
 
 	def get_tile(self, x, y):
 		return self.data[x * self.maze_dim + y]
-	
+
+# One potential "algorithm"
 class ManualControl(object):
 	def __init__(self, maze_dim):
 		self.maze_dim = maze_dim
@@ -81,53 +82,6 @@ class ManualControl(object):
 			movement = 0
 
 		return rotation, movement
-
-class MazeView(object):
-	
-	# maze_dim as a param makes everything easier. 	
-	def __init__(self, maze_dim):
-		self.maze_dim = maze_dim
-
-	# Print before the algo runs, to see what the algo
-	# is working with. 
-	def pre_algo_view(self, **kwargs):
-		# location and heading are basic. Always print. 
-		location = kwargs["location"]
-		heading = kwargs["heading"]
-		normalized_sensors = kwargs["normalized_sensors"]
-		maze = kwargs["maze"]
-
-		location_output = "Location: " + str(location)
-		heading_output = "Heading: " + heading
-		output_1 = location_output + "\t" + heading_output
-
-		arrow_dict = {
-			"N": unichr(0x25B2),
-			"E": unichr(0x25B6),
-			"S": unichr(0x25BC),
-			"W": unichr(0x25C0)
-		}
-		unicode_arrow = arrow_dict[heading]
-
-		sensor_N = str(normalized_sensors[0])
-		sensor_E = str(normalized_sensors[1])
-		sensor_S = str(normalized_sensors[2])
-		sensor_W = str(normalized_sensors[3])
-
-		output_2 = "\n\t" + sensor_N + "\n" + sensor_W + "\t" + unicode_arrow + "\t" + sensor_E + "\n\t" + sensor_S
-
-		print(output_1)
-		print(output_2)
-
-		# Now we print the maze itself. 
-		current_str = ""
-		for y in xrange(self.maze_dim - 1, -1, -1):
-			for x in xrange(self.maze_dim):
-				current = maze.get_tile(x, y)
-				current_str = current_str + str(current.get_num_known_adjacents())
-			print current_str
-			current_str = ""
-
 
 class Robot_v2(object):
 	def __init__(self, maze_dim):
@@ -180,63 +134,65 @@ class Robot_v2(object):
 	# 	  12 entries in dict (N1, N2, N3, ..., W3)
 	def update_graph(self, norm_sensors):
 		
+		# fairly clean up the code. 
+		sensors = norm_sensors	
 		# View North
 		x = self.location[0]
 		y = self.location[1]
 
-		if(norm_sensors[0] is not None):	# North
-			for i in xrange(0, norm_sensors[0]):
+		# super repetitive code, but gets the job done 
+		# could be improved with more flexible lookups.
+		if(sensors[0] is not None):	# North
+			for i in xrange(0, sensors[0]):
 				current = self.maze.get_tile(x, y + i)
 				next_tile = self.maze.get_tile(x, y + i + 1)
 				current.add_connection("N", next_tile)
 				next_tile.add_connection("S", current)
 
-			if(self.is_valid_coords(x, y + norm_sensors[0] + 1)):
-				current = self.maze.get_tile(x, y + norm_sensors[0])
-				next_tile = self.maze.get_tile(x, y+norm_sensors[0] + 1)
+			if(self.is_valid_coords(x, y + sensors[0] + 1)):
+				current = self.maze.get_tile(x, y + sensors[0])
+				next_tile = self.maze.get_tile(x, y+sensors[0] + 1)
 				current.add_wall("N")
 				next_tile.add_wall("S")
 
-		if(norm_sensors[1] is not None): # East
-			for i in xrange(0, norm_sensors[1]):
+		if(sensors[1] is not None): # East
+			for i in xrange(0, sensors[1]):
 				current = self.maze.get_tile(x + i, y)
 				next_tile = self.maze.get_tile(x+ i + 1, y)
 				current.add_connection("E", next_tile)
 				next_tile.add_connection("W", current)
 
-			if(self.is_valid_coords(x+norm_sensors[1] + 1, y)):
-				current = self.maze.get_tile(x + norm_sensors[1], y)
-				next_tile = self.maze.get_tile(x + norm_sensors[1] + 1, y)
+			if(self.is_valid_coords(x+sensors[1] + 1, y)):
+				current = self.maze.get_tile(x + sensors[1], y)
+				next_tile = self.maze.get_tile(x + sensors[1] + 1, y)
 				current.add_wall("E")
 				next_tile.add_wall("W")
 
-		if(norm_sensors[2] is not None): # South	
-			for i in xrange(0, norm_sensors[2]):
+		if(sensors[2] is not None): # South	
+			for i in xrange(0, sensors[2]):
 				current = self.maze.get_tile(x, y - i)
 				next_tile = self.maze.get_tile(x, y - i - 1)
 				current.add_connection("S", next_tile)
 				next_tile.add_connection("N", current)
 	
-			if(self.is_valid_coords(x, y - norm_sensors[2] - 1)):
-				current = self.maze.get_tile(x, y - norm_sensors[2])
-				next_tile = self.maze.get_tile(x, y-norm_sensors[2] - 1)
+			if(self.is_valid_coords(x, y - sensors[2] - 1)):
+				current = self.maze.get_tile(x, y - sensors[2])
+				next_tile = self.maze.get_tile(x, y-sensors[2] - 1)
 				current.add_wall("S")
 				next_tile.add_wall("N")	
 
-		if(norm_sensors[3] is not None): # West
-			for i in xrange(0, norm_sensors[3]):
+		if(sensors[3] is not None): # West
+			for i in xrange(0, sensors[3]):
 				current = self.maze.get_tile(x - i, y)
 				next_tile = self.maze.get_tile(x - i - 1, y)
 				current.add_connection("W", next_tile)
 				next_tile.add_connection("E", current)
 
-			if(self.is_valid_coords(x-norm_sensors[3] - 1, y)):
-				current = self.maze.get_tile(x - norm_sensors[3], y)
-				next_tile = self.maze.get_tile(x - norm_sensors[3] - 1, y)
+			if(self.is_valid_coords(x-sensors[3] - 1, y)):
+				current = self.maze.get_tile(x - sensors[3], y)
+				next_tile = self.maze.get_tile(x - sensors[3] - 1, y)
 				current.add_wall("W")
 				next_tile.add_wall("E")
-
-
 
 	# Essentially a helper to properly update the 
 	# maze. 
@@ -291,7 +247,6 @@ class Robot_v2(object):
 			"location": self.location,
 			"normalized_sensors": normalized_sensors,
 			"maze": self.maze
-
 		}
 
 		self.view.pre_algo_view(**info_to_view)

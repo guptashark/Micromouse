@@ -1,3 +1,4 @@
+from string import zfill
 
 class MazeView(object):
 	
@@ -41,8 +42,8 @@ class MazeView(object):
 		for y in xrange(self.maze_dim - 1, -1, -1):
 			for x in xrange(self.maze_dim):
 				current = maze.get_tile(x, y)
-				current_str = current_str + str(current.get_num_known_adjacents())
+				current_str = current_str + str(current.get_num_known_adjacents()).zfill(2) + " "
 			print current_str
 			current_str = ""
 
-
+		

@@ -44,6 +44,11 @@ class MazeTile(object):
 			self.connections[direction] = None
 			self.num_known_adjacents += 1
 
+	# Something to clean the code when adding walls with the robot. 
+	def add_wall_list(self, directions):
+		for direction in directions:
+			self.add_wall(direction)
+
 	def get_num_known_adjacents(self):
 		return self.num_known_adjacents	
 
@@ -108,16 +113,16 @@ class Robot_v2(object):
 	def set_maze_edge_walls(self):
 		for i in xrange(self.maze_dim):
 			current = self.maze.get_tile(i, 0)
-			current.add_wall("S")
+			current.add_wall_list(["S1", "S2", "S3"])
 
 			current = self.maze.get_tile(i, self.maze_dim - 1)
-			current.add_wall("N")
+			current.add_wall_list(["N1", "N2", "N3"])
 
 			current = self.maze.get_tile(0, i)
-			current.add_wall("W")
+			current.add_wall_list(["W1", "W2", "W3"])
 
 			current = self.maze.get_tile(self.maze_dim - 1, i)
-			current.add_wall("E")
+			current.add_wall_list(["E1", "E2", "E3"])
 
 	
 	# useful helper for update maze
@@ -146,53 +151,53 @@ class Robot_v2(object):
 			for i in xrange(0, sensors[0]):
 				current = self.maze.get_tile(x, y + i)
 				next_tile = self.maze.get_tile(x, y + i + 1)
-				current.add_connection("N", next_tile)
-				next_tile.add_connection("S", current)
+				current.add_connection("N1", next_tile)
+				next_tile.add_connection("S1", current)
 
 			if(self.is_valid_coords(x, y + sensors[0] + 1)):
 				current = self.maze.get_tile(x, y + sensors[0])
 				next_tile = self.maze.get_tile(x, y+sensors[0] + 1)
-				current.add_wall("N")
-				next_tile.add_wall("S")
+				current.add_wall_list(["N1", "N2", "N3"])
+				next_tile.add_wall_list(["S1", "S2", "S3"])
 
 		if(sensors[1] is not None): # East
 			for i in xrange(0, sensors[1]):
 				current = self.maze.get_tile(x + i, y)
 				next_tile = self.maze.get_tile(x+ i + 1, y)
-				current.add_connection("E", next_tile)
-				next_tile.add_connection("W", current)
+				current.add_connection("E1", next_tile)
+				next_tile.add_connection("W1", current)
 
 			if(self.is_valid_coords(x+sensors[1] + 1, y)):
 				current = self.maze.get_tile(x + sensors[1], y)
 				next_tile = self.maze.get_tile(x + sensors[1] + 1, y)
-				current.add_wall("E")
-				next_tile.add_wall("W")
+				current.add_wall_list(["E1", "E2", "E3"])
+				next_tile.add_wall_list(["W1", "W2", "W3"])
 
 		if(sensors[2] is not None): # South	
 			for i in xrange(0, sensors[2]):
 				current = self.maze.get_tile(x, y - i)
 				next_tile = self.maze.get_tile(x, y - i - 1)
-				current.add_connection("S", next_tile)
-				next_tile.add_connection("N", current)
+				current.add_connection("S1", next_tile)
+				next_tile.add_connection("N1", current)
 	
 			if(self.is_valid_coords(x, y - sensors[2] - 1)):
 				current = self.maze.get_tile(x, y - sensors[2])
 				next_tile = self.maze.get_tile(x, y-sensors[2] - 1)
-				current.add_wall("S")
-				next_tile.add_wall("N")	
+				current.add_wall_list(["S1", "S2", "S3"])
+				next_tile.add_wall_list(["N1", "N2", "N3"])	
 
 		if(sensors[3] is not None): # West
 			for i in xrange(0, sensors[3]):
 				current = self.maze.get_tile(x - i, y)
 				next_tile = self.maze.get_tile(x - i - 1, y)
-				current.add_connection("W", next_tile)
-				next_tile.add_connection("E", current)
+				current.add_connection("W1", next_tile)
+				next_tile.add_connection("E1", current)
 
 			if(self.is_valid_coords(x-sensors[3] - 1, y)):
 				current = self.maze.get_tile(x - sensors[3], y)
 				next_tile = self.maze.get_tile(x - sensors[3] - 1, y)
-				current.add_wall("W")
-				next_tile.add_wall("E")
+				current.add_wall_list(["W1", "W2", "W3"])
+				next_tile.add_wall_list(["E1", "W2", "W3"])
 
 	# Essentially a helper to properly update the 
 	# maze. 

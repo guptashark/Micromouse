@@ -200,6 +200,28 @@ class Robot_v2(object):
 				current.add_wall_list(["W1", "W2", "W3"])
 				next_tile.add_wall_list(["E1", "W2", "W3"])
 
+		self.second_pass_update(norm_sensors)
+
+	def second_pass_update(self, norm_sensors):
+		# The stitching process. 
+		if(self.move_num == 1): 
+			# Do the special thing for the northbound tiles. 
+			print("Doing special first move processing")
+			pass
+
+		# figure out the axis we're working with. 
+		if((self.heading == "N") or (self.heading == "S")):
+			x_min = self.location[0] - norm_sensors[3]	
+			x_max = self.location[0] + norm_sensors[1]
+			y = self.location[1]
+			print("Processing horiz: " + str(x_min) + " to " + str(x_max))
+		else:
+			y_min = self.location[1] - norm_sensors[2]
+			y_max = self.location[1] + norm_sensors[0]
+			x = self.location[0]
+			print("Processing vert: " + str(y_min) + " to " + str(y_max))
+
+
 	# Essentially a helper to properly update the 
 	# maze. 
 	def normalize_sensors(self, sensors):

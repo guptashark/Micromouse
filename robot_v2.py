@@ -2,6 +2,10 @@ from mazeview import MazeView
 
 class MazeTile(object):
 	
+	# a shared ref to maze
+	# to update its "knowledge" index
+	maze_ref = None
+
 	def __init__(self, x, y, maze_dim):
 		self.x = x
 		self.y = y
@@ -31,6 +35,7 @@ class MazeTile(object):
 		if(current_val == None):
 			self.connections[direction] = tile_ref
 			self.num_known_adjacents += 1
+			MazeTile.maze_ref.increment_coverage()
 		else:
 			if(current_val != tile_ref):
 				raise ValueError("Overwriting tile ref! Bad Logic!")
@@ -43,6 +48,7 @@ class MazeTile(object):
 		else:
 			self.connections[direction] = None
 			self.num_known_adjacents += 1
+			MazeTile.maze_ref.increment_coverage()
 
 	# Something to clean the code when adding walls with the robot. 
 	def add_wall_list(self, directions):
@@ -56,6 +62,14 @@ class MazeGraph(object):
 	def __init__(self, maze_dim):
 
 		self.maze_dim = maze_dim
+
+		# to calc how much we know about the maze. 
+		# (Sum of number of actions known per tile, 
+		# whether it be a wall, maze edge, etc. 
+		self.raw_coverage_index = 0
+		self.total_coverage = 12 * self.maze_dim ** 2
+
+		# The tiles themselves
 		self.data = []
 
 		for x in xrange(self.maze_dim):
@@ -64,6 +78,19 @@ class MazeGraph(object):
 
 	def get_tile(self, x, y):
 		return self.data[x * self.maze_dim + y]
+
+	def increment_coverage(self):
+		self.raw_coverage_index += 1
+
+	def get_coverage_score(self):
+		
+		current_coverage = float(self.raw_coverage_index)
+		complete_coverage = float(self.total_coverage)
+
+		raw_percent = current_coverage / complete_coverage
+
+		score = int(raw_percent * 100)
+		return score
 
 class MazeAlgorithm(object):
 
@@ -137,9 +164,10 @@ class Robot_v2(object):
 		self.view = MazeView(maze_dim)
 		self.maze = MazeGraph(maze_dim)
 
+		# Give the tiles class a ref to the maze
+		MazeTile.maze_ref = self.maze
 		# add in all the edges. 
 		self.set_maze_edge_walls()
-
 
 	def set_maze_edge_walls(self):
 		for i in xrange(self.maze_dim):
@@ -398,6 +426,7 @@ class Robot_v2(object):
 		logic_sensors, view_sensors = self.normalize_sensors(sensors)
 		self.update_graph(logic_sensors)
 
+		coverage_score = self.maze.get_coverage_score()
 		# Pass the data necessary to render
 		# info on the maze before the algo runs. 
 		# (To see what the input to the algo is)
@@ -405,6 +434,7 @@ class Robot_v2(object):
 			"maze": self.maze,
 			"heading": self.heading,
 			"location": self.location,
+			"coverage_score": coverage_score,
 			"normalized_sensors": view_sensors
 		}
 

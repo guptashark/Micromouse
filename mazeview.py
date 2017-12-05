@@ -47,12 +47,14 @@ class MazeView(object):
 		# location and heading are basic. Always print. 
 		location = kwargs["location"]
 		heading = kwargs["heading"]
+		coverage_score = kwargs["coverage_score"]
 		normalized_sensors = kwargs["normalized_sensors"]
 		maze = kwargs["maze"]
 
 		location_output = "Location: " + str(location)
 		heading_output = "Heading: " + heading
 		output_1 = location_output + "\t" + heading_output
+		output_2 = "Coverage: " + str(coverage_score) + "%"
 
 		arrow_dict = {
 			"N": unichr(0x25B2),
@@ -67,10 +69,11 @@ class MazeView(object):
 		sensor_S = str(normalized_sensors[2])
 		sensor_W = str(normalized_sensors[3])
 
-		output_2 = "\n\t" + sensor_N + "\n" + sensor_W + "\t" + unicode_arrow + "\t" + sensor_E + "\n\t" + sensor_S
+		output_3 = "\n\t" + sensor_N + "\n" + sensor_W + "\t" + unicode_arrow + "\t" + sensor_E + "\n\t" + sensor_S
 
 		print(output_1)
 		print(output_2)
+		print(output_3)
 
 		# Now we print the maze itself. 
 		current_str = ""

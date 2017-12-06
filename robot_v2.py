@@ -342,7 +342,7 @@ class Robot_v2(object):
 				current = self.maze.get_tile(x_min + 1, y)
 				current.add_wall_list(["W2", "W3"])
 
-			elif((x_max - x_min) >= 2):
+			if((x_max - x_min) >= 2):
 				current = self.maze.get_tile(x_max - 2, y)
 				current.add_wall("E3")
 
@@ -385,7 +385,6 @@ class Robot_v2(object):
 
 	# Should do all the reset stuff that we need to... 
 	def begin_performance_run(self):
-		print("STARTING RUN 2")
 		P = self.get_shortest_path()
 		print(P)
 	
@@ -405,7 +404,6 @@ class Robot_v2(object):
 		D = deque()
 		D.append(start_tile)
 	
-		print("Checkpoint 1")	
 		# Construct the set Q. 
 		while (len(D) > 0): 
 			current = D.popleft()
@@ -422,7 +420,6 @@ class Robot_v2(object):
 
 		P[start_tile] = [0, None, None]
 
-		print("Checkpoint 2")
 		# Run Dijkstras on Q
 		while(len(Q) > 0):
 			min_so_far = 2000
@@ -446,7 +443,6 @@ class Robot_v2(object):
 					alt = u_dist + 1
 					if (alt < P[u_destination][0]):
 						P[u_destination] = [alt, u, action]
-		print("Checkpoint 3")
 		return P
 	
 	# Essentially a helper to properly update the 
@@ -523,7 +519,7 @@ class Robot_v2(object):
 		}
 
 		self.view.pre_algo_view(**info_to_view)
-		
+
 		# pass the graph, heading and location. 
 		# Extendible. 
 		info_to_algo = {

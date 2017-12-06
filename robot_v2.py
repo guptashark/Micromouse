@@ -17,7 +17,7 @@ class MazeTile(object):
 	
 		# The number of entries inconnections known where
 		# the keys are: N, E, S, W
-		self.num_known_adjacents = 0
+		self.coverage_index = 0
 
 	def __ne__(self, other):
 		if (other == None): 
@@ -45,7 +45,7 @@ class MazeTile(object):
 		current_val = self.connections.get(direction)
 		if(current_val == None):
 			self.connections[direction] = tile_ref
-			self.num_known_adjacents += 1
+			self.coverage_index += 1
 			MazeTile.maze_ref.increment_coverage()
 		else:
 			if(current_val != tile_ref):
@@ -58,7 +58,7 @@ class MazeTile(object):
 				raise ValueError("Overwriting tile ref! Bad Logic!")
 		else:
 			self.connections[direction] = None
-			self.num_known_adjacents += 1
+			self.coverage_index += 1
 			MazeTile.maze_ref.increment_coverage()
 
 	# Something to clean the code when adding walls with the robot. 
@@ -66,8 +66,8 @@ class MazeTile(object):
 		for direction in directions:
 			self.add_wall(direction)
 
-	def get_num_known_adjacents(self):
-		return self.num_known_adjacents	
+	def get_coverage_index(self):
+		return self.coverage_index	
 
 	def get_connections(self):
 		return self.connections
@@ -160,6 +160,44 @@ class ManualControl(MazeAlgorithm):
 		ret_val = self.key_to_action_tuple(action, heading)
 		return ret_val
 
+class GreedyWalk(MazeAlgorithm):
+	def __init__(self, maze_dim):
+		self.maze_dim = maze_dim
+
+	def next_move(self, **kwargs):
+		
+		maze = kwargs["graph"]	
+		location = kwargs["location"]
+		heading = kwargs["heading"]
+		x = location[0]
+		y = location[1]
+
+		print (str(x) + " " + str(y))
+		#print(str(x) + " " + str(y))
+
+		current_tile = maze.get_tile(x, y)
+		
+		if (maze.get_coverage_score() > 75):
+			print("SENDING RESET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+			return 'Reset', 'Reset'
+		
+		connections = current_tile.get_connections()
+		for key in connections:
+			destination = connections[key]
+			if(destination is not None):
+				if (destination.get_coverage_index() < 12):
+
+					return self.key_to_action_tuple(key, heading)
+
+		for key in connections:
+			destination = connections[key]
+			if(destination is not None):
+				return self.key_to_action_tuple(key, heading)
+
+			
+
+		
+
 class Robot_v2(object):
 	def __init__(self, maze_dim):
 		
@@ -178,7 +216,8 @@ class Robot_v2(object):
 		self.maze_dim = maze_dim
 
 		# Set the algorithm that will be used. 
-		self.algo = ManualControl(maze_dim)
+	#	self.algo = ManualControl(maze_dim)
+		self.algo = GreedyWalk(maze_dim)
 		self.view = MazeView(maze_dim)
 		self.maze = MazeGraph(maze_dim)
 
@@ -577,6 +616,7 @@ class Robot_v2(object):
 		self.update_graph(logic_sensors)
 
 		coverage_score = self.maze.get_coverage_score()
+		print(coverage_score)
 		# Pass the data necessary to render
 		# info on the maze before the algo runs. 
 		# (To see what the input to the algo is)
@@ -601,7 +641,6 @@ class Robot_v2(object):
 		}
 
 		rotation, movement = self.algo.next_move(**info_to_algo)
-
 
 		self.update_heading(rotation)
 		self.update_location(movement)

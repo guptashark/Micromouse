@@ -1,5 +1,5 @@
 from mazeview import MazeView
-
+from collections import deque
 class MazeTile(object):
 	
 	# a shared ref to maze
@@ -25,6 +25,11 @@ class MazeTile(object):
 			return False
 		else:
 			return True
+
+	# To allow storing tiles in sets and dicts
+	# for algos
+	def __hash__(self):
+		return self.maze_dim * self.x + self.y
 
 	# Currently running in adjacent mode
 	def add_connection(self, direction, tile_ref):
@@ -57,6 +62,9 @@ class MazeTile(object):
 
 	def get_num_known_adjacents(self):
 		return self.num_known_adjacents	
+
+	def get_connections(self):
+		return self.connections
 
 class MazeGraph(object):
 	def __init__(self, maze_dim):
@@ -95,6 +103,8 @@ class MazeGraph(object):
 class MazeAlgorithm(object):
 
 	def key_to_action_tuple(self, move_key, heading):
+		if(move_key == "Reset"):
+			return 'Reset', 'Reset'
 		
 		action_direction = move_key[0]
 		action_steps = int(move_key[1])
@@ -368,12 +378,69 @@ class Robot_v2(object):
 				
 				current = self.maze.get_tile(x, y_min + 2)
 				current.add_wall("S3")
+
+	# Should do all the reset stuff that we need to... 
+	def begin_performance_run(self):
+		print("STARTING RUN 2")
+	
+	# Shortest path algo using dijkstra on second run. 
+	def get_shortest_path(self):
+
+		start_tile = self.maze.get_tile(0, 0)
+
+		# set of nodes. 
+		Q = set()
+
+		# dict where: 
+		# key: MazeTile 
+		# value: [distance, prev_tile, edge]
+		P = {}
+		
+		D = deque(start_tile)
+		
+		# Construct the set Q. 
+		while(not D.empty()): 
+			current = D.popleft()
+			connections = current.get_connections()
+			for action in connections:
+				destination = connections[action]
+				if(destination is not None):
+					D.append(destination)
+
+			Q.append(current)
+			P[current] = [2000, None, None]
+
+		P[start_tile] = [0, None, None]
+
+		# Run Dijkstras on Q
+		while(not Q.empty()):
+			min_so_far = 2000
+			min_tile = None
+
+			for tile in Q:
+				dist = P[tile][0]
+				if(dist < min_so_far):
+					min_tile = tile
+
+			u = min_tile
+			u_dist = P[u][0]
+
+			Q.remove(u)
+			u_connections = u.get_connections()
+
+			for action in u_connections:
+				
+				u_destination = u_connections[action]
+				if(u_destination is not None):
+					alt = u_dist + 1
+					if (alt < P[u_destination][0]):
+						P[u_destination] = [alt, u, action]
+
+			return P
 	
 	# Essentially a helper to properly update the 
 	# maze. 
 	def normalize_sensors(self, sensors):
-		
-		
 		# There could be a better way to do this... 
 		# but take the index and do weird slicing. 
 		slice_lookup = [1, 0, 3, 2]
@@ -397,12 +464,18 @@ class Robot_v2(object):
 
 	# Do this first, so that update_location works. 
 	def update_heading(self, rotation):
+		if(rotation == 'Reset'):
+			self.heading = "N"
+			return 
 		
 		self.heading_index += (rotation / 90)
 		self.heading_index %= 4
 		self.heading = self.heading_list[self.heading_index]
 
 	def update_location(self, movement):
+		if(movement == 'Reset'):
+			self.location = [0, 0]
+			return
 		
 		if(self.heading == "E"):
 			self.location[0] += movement
@@ -450,7 +523,12 @@ class Robot_v2(object):
 
 		rotation, movement = self.algo.next_move(**info_to_algo)
 
+
 		self.update_heading(rotation)
 		self.update_location(movement)
 		self.move_num += 1
+		
+		if(rotation == 'Reset' and movement == 'Reset'):
+			self.begin_performance_run()
+
 		return rotation, movement

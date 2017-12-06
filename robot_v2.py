@@ -163,8 +163,9 @@ class MazeAlgorithm(object):
 
 # One potential "algorithm"
 class ManualControl(MazeAlgorithm):
-	def __init__(self, maze_dim):
+	def __init__(self, maze_dim, maze):
 		self.maze_dim = maze_dim
+		self.maze = maze
 
 	def next_move(self, **kwargs):
 		heading = kwargs["heading"]
@@ -173,25 +174,28 @@ class ManualControl(MazeAlgorithm):
 		return ret_val
 
 class GreedyWalk(MazeAlgorithm):
-	def __init__(self, maze_dim):
+	def __init__(self, maze_dim, maze):
 		self.maze_dim = maze_dim
+		self.maze = maze
+
+	def reached_goal(self, x, y):
+		c = self.maze_dim / 2
+		x_in_range = ((c - 1 <= x) and (x <= c))
+		y_in_range = ((c - 1 <= y) and (y <= c))
+
+		return (x_in_range and y_in_range)
 
 	def next_move(self, **kwargs):
 		
-		maze = kwargs["graph"]	
 		location = kwargs["location"]
 		heading = kwargs["heading"]
 		x = location[0]
 		y = location[1]
 
-		print (str(x) + " " + str(y))
-		#print(str(x) + " " + str(y))
-
-		current_tile = maze.get_tile(x, y)
-		
-		if (maze.get_coverage_score() > 75):
-			print("SENDING RESET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		if(self.reached_goal(x, y)): 
 			return 'Reset', 'Reset'
+
+		current_tile = self.maze.get_tile(x, y)
 		
 		links = current_tile.get_tile_links()
 		for key in links:
@@ -221,14 +225,15 @@ class Robot_v2(object):
 
 		self.maze_dim = maze_dim
 
-		# Set the algorithm that will be used. 
-	#	self.algo = ManualControl(maze_dim)
-		self.algo = ManualControl(maze_dim)
-		self.view = MazeView(maze_dim)
 		self.maze = MazeGraph(maze_dim)
-
+		# Set the algorithm that will be used,
+		# and give it a ref to the maze. 
+		self.algo = GreedyWalk(maze_dim, self.maze)
+		self.view = MazeView(maze_dim)
+		
 		# Give the tiles class a ref to the maze
 		MazeTile.maze_ref = self.maze
+
 		# add in all the edges. 
 		self.set_maze_edge_walls()
 
@@ -450,13 +455,16 @@ class Robot_v2(object):
 
 		for i in xrange(4):
 			current = goal_tiles[i]
-			parent = P[current][1]
-			goal_directions[i].append(P[current][2])
 
-			while(parent is not None):
-				current = parent
-				goal_directions[i].append(P[current][2])
+			if(current in P):
 				parent = P[current][1]
+				goal_directions[i].append(P[current][2])
+
+				while(parent is not None):
+					current = parent
+					goal_directions[i].append(P[current][2])
+					parent = P[current][1]
+
 
 		# Now get the path with the shortest len... 
 		# we could run a fun list sort, but this is 
@@ -464,9 +472,11 @@ class Robot_v2(object):
 		min_dist = 2000
 		shortest_index = None
 		for i in xrange(4):
-			if(len(goal_directions[i]) < min_dist):
-				min_dist = len(goal_directions[i])
-				shortest_index = i
+			# make sure it isn't empty
+			if(goal_directions[i]):
+				if(len(goal_directions[i]) < min_dist):
+					min_dist = len(goal_directions[i])
+					shortest_index = i
 
 		shortest_path = goal_directions[shortest_index]
 		shortest_path.pop()
@@ -606,7 +616,6 @@ class Robot_v2(object):
 		self.update_graph(logic_sensors)
 
 		coverage_score = self.maze.get_coverage_score()
-		print(coverage_score)
 		# Pass the data necessary to render
 		# info on the maze before the algo runs. 
 		# (To see what the input to the algo is)
@@ -617,15 +626,16 @@ class Robot_v2(object):
 			"coverage_score": coverage_score,
 			"normalized_sensors": view_sensors
 		}
-	
-		"""	
-		if(SETTINGS_VISUAL_ON):
-			self.view.pre_algo_view(**info_to_view)
-		"""
+
+		# This is toggled by the robot itself, 
+		# when we create its config file. 
+		# The maze view needs to be updated anyways	
+		# self.view.pre_algo_view(**info_to_view)
+
+
 		# pass the graph, heading and location. 
 		# Extendible. 
 		info_to_algo = {
-			"graph": self.maze,
 			"heading": self.heading,
 			"location": self.location
 		}

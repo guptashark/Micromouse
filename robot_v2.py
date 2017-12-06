@@ -12,7 +12,15 @@ class MazeTile(object):
 		self.x = x
 		self.y = y
 		self.maze_dim = maze_dim
+
+		# connections for all adjacents, 
+		# result val can be None
 		self.connections = {}
+
+		# Tile links for only links
+		# where action can be made by robot
+		# and reaches a tile. 
+		self.tile_links = {}
 		self.algo_data = {}
 	
 		# The number of entries inconnections known where
@@ -45,6 +53,7 @@ class MazeTile(object):
 		current_val = self.connections.get(direction)
 		if(current_val == None):
 			self.connections[direction] = tile_ref
+			self.tile_links[direction] = tile_ref
 			self.coverage_index += 1
 			MazeTile.maze_ref.increment_coverage()
 		else:
@@ -71,6 +80,9 @@ class MazeTile(object):
 
 	def get_connections(self):
 		return self.connections
+
+	def get_tile_links(self):
+		return self.tile_links
 
 class MazeGraph(object):
 	def __init__(self, maze_dim):
@@ -181,22 +193,16 @@ class GreedyWalk(MazeAlgorithm):
 			print("SENDING RESET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 			return 'Reset', 'Reset'
 		
-		connections = current_tile.get_connections()
-		for key in connections:
-			destination = connections[key]
-			if(destination is not None):
-				if (destination.get_coverage_index() < 12):
-
-					return self.key_to_action_tuple(key, heading)
-
-		for key in connections:
-			destination = connections[key]
-			if(destination is not None):
+		links = current_tile.get_tile_links()
+		for key in links:
+			destination = links[key]
+			if (destination.get_coverage_index() < 12):
 				return self.key_to_action_tuple(key, heading)
 
-			
-
-		
+		#janky, fix this
+		for key in links:
+			destination = links[key]
+			return self.key_to_action_tuple(key, heading)
 
 class Robot_v2(object):
 	def __init__(self, maze_dim):
@@ -217,7 +223,7 @@ class Robot_v2(object):
 
 		# Set the algorithm that will be used. 
 	#	self.algo = ManualControl(maze_dim)
-		self.algo = GreedyWalk(maze_dim)
+		self.algo = ManualControl(maze_dim)
 		self.view = MazeView(maze_dim)
 		self.maze = MazeGraph(maze_dim)
 
@@ -502,13 +508,11 @@ class Robot_v2(object):
 		# Construct the set Q. 
 		while (len(D) > 0): 
 			current = D.popleft()
-			connections = current.get_connections()
-			#print(connections)
+			connections = current.get_tile_links()
 			for action in connections:
 				destination = connections[action]
-				if(destination is not None):
-					if(destination not in Q):
-						D.append(destination)
+				if(destination not in Q):
+					D.append(destination)
 
 			Q.add(current)
 			P[current] = [2000, None, None]

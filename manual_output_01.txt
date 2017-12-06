@@ -1,0 +1,152 @@
+Starting run 0.
+Doing special first move processing
+Processing horiz: 0 to 0
+Cardinal Action: Processing horiz: 0 to 3
+Cardinal Action: Processing vert: 0 to 2
+Cardinal Action: Processing horiz: 1 to 1
+Cardinal Action: Processing horiz: 1 to 4
+Cardinal Action: Processing vert: 0 to 1
+Cardinal Action: Processing vert: 0 to 0
+Cardinal Action: Processing vert: 0 to 2
+Cardinal Action: Processing horiz: 4 to 4
+Cardinal Action: Processing horiz: 4 to 6
+Cardinal Action: Processing vert: 0 to 3
+Cardinal Action: Processing vert: 0 to 2
+Cardinal Action: Processing horiz: 6 to 7
+Cardinal Action: Processing vert: 0 to 3
+Cardinal Action: Processing horiz: 7 to 11
+Cardinal Action: Processing vert: 0 to 1
+Cardinal Action: Processing vert: 0 to 2
+Cardinal Action: Processing vert: 0 to 2
+Cardinal Action: Processing vert: 0 to 7
+Cardinal Action: Processing horiz: 11 to 11
+Cardinal Action: Processing horiz: 11 to 11
+Cardinal Action: Processing horiz: 8 to 11
+Cardinal Action: Processing vert: 3 to 3
+Cardinal Action: Processing vert: 3 to 3
+Cardinal Action: Processing vert: 2 to 8
+Cardinal Action: Processing horiz: 7 to 9
+Cardinal Action: Processing horiz: 7 to 8
+Cardinal Action: Processing vert: 5 to 7
+Cardinal Action: Processing horiz: 5 to 7
+Cardinal Action: Processing vert: 5 to 6
+Cardinal Action: Processing vert: 5 to 6
+Cardinal Action: Processing horiz: 5 to 6
+Cardinal Action: Processing vert: 5 to 6
+Cardinal Action: Processing horiz: 5 to 7
+Cardinal Action: Processing vert: 5 to 7
+Cardinal Action: Processing horiz: 7 to 8
+Cardinal Action: Processing vert: 2 to 8
+Cardinal Action: Processing horiz: 8 to 9
+Cardinal Action: Processing horiz: 7 to 8
+Cardinal Action: Processing horiz: 7 to 9
+Cardinal Action: Processing vert: 4 to 10
+Cardinal Action: Processing horiz: 9 to 10
+Cardinal Action: Processing horiz: 8 to 9
+Cardinal Action: Processing horiz: 9 to 9
+Cardinal Action: Processing horiz: 8 to 11
+Cardinal Action: Processing vert: 2 to 8
+Cardinal Action: Processing horiz: 7 to 8
+Cardinal Action: Processing vert: 5 to 7
+Cardinal Action: Processing horiz: 5 to 7
+Cardinal Action: Processing horiz: 7 to 8
+Cardinal Action: Processing vert: 2 to 8
+Cardinal Action: Processing horiz: 7 to 9
+Cardinal Action: Processing vert: 4 to 10
+Cardinal Action: Processing horiz: 9 to 10
+Cardinal Action: Processing horiz: 8 to 9
+Cardinal Action: Processing horiz: 9 to 9
+Cardinal Action: Processing horiz: 8 to 11
+Cardinal Action: Processing horiz: 9 to 10
+Cardinal Action: Processing horiz: 7 to 10
+Cardinal Action: Processing vert: 9 to 10
+Cardinal Action: Processing horiz: 5 to 8
+Cardinal Action: Processing vert: 8 to 9
+Cardinal Action: Processing horiz: 4 to 7
+Cardinal Action: Processing vert: 7 to 8
+Cardinal Action: Processing horiz: 4 to 6
+Cardinal Action: Processing vert: 7 to 7
+Cardinal Action: Processing vert: 3 to 9
+Cardinal Action: Processing horiz: 4 to 4
+Cardinal Action: Processing horiz: 4 to 4
+Cardinal Action: Processing horiz: 3 to 6
+Cardinal Action: Processing vert: 4 to 7
+Cardinal Action: Processing horiz: 2 to 3
+Cardinal Action: Processing vert: 4 to 7
+Cardinal Action: Processing horiz: 1 to 2
+Cardinal Action: Processing vert: 3 to 7
+Cardinal Action: Processing horiz: 0 to 2
+Cardinal Action: Processing vert: 0 to 11
+Cardinal Action: ['N2', 'E1', 'S2', 'E3', 'N2', 'E2', 'S1', 'E1', 'S1', 'E1', 'E3', 'N3', 'W3', 'N2', 'W1', 'N1', 'W1']
+Ending first run. Starting next run.
+Starting run 1.
+====================
+N2
+N
+0 -- 2
+====================
+E1
+N
+90 -- 1
+====================
+S2
+E
+90 -- 2
+====================
+E3
+S
+-90 -- 3
+====================
+N2
+E
+-90 -- 2
+====================
+E2
+N
+90 -- 2
+====================
+S1
+E
+90 -- 1
+====================
+E1
+S
+-90 -- 1
+====================
+S1
+E
+90 -- 1
+====================
+E1
+S
+-90 -- 1
+====================
+E3
+E
+0 -- 3
+====================
+N3
+E
+-90 -- 3
+====================
+W3
+N
+-90 -- 3
+====================
+N2
+W
+90 -- 2
+====================
+W1
+N
+-90 -- 1
+====================
+N1
+W
+90 -- 1
+====================
+W1
+N
+-90 -- 1
+Goal found; run 1 completed!
+Task complete! Score: 19.567

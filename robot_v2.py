@@ -1,5 +1,7 @@
 from mazeview import MazeView
 from collections import deque
+
+
 class MazeTile(object):
 	
 	# a shared ref to maze
@@ -154,7 +156,7 @@ class ManualControl(MazeAlgorithm):
 
 	def next_move(self, **kwargs):
 		heading = kwargs["heading"]
-		action = raw_input("Cardinal Action: ")
+		action = raw_input()
 		ret_val = self.key_to_action_tuple(action, heading)
 		return ret_val
 
@@ -163,6 +165,7 @@ class Robot_v2(object):
 		
 		self.move_num = 1
 		self.on_second_run = False
+		self.dijkstra_path = None
 
 		self.location = [0, 0]
 
@@ -278,7 +281,6 @@ class Robot_v2(object):
 		# The stitching process. 
 		if(self.move_num == 1): 
 			# Do the special thing for the northbound tiles. 
-			print("Doing special first move processing")
 			# all vars in this block are prefixed with "fm"
 			# for "first move" 
 			fm_y_min = 0
@@ -318,7 +320,6 @@ class Robot_v2(object):
 			x_min = self.location[0] - norm_sensors[3]	
 			x_max = self.location[0] + norm_sensors[1]
 			y = self.location[1]
-			print("Processing horiz: " + str(x_min) + " to " + str(x_max))
 			for i in xrange(x_max - x_min - 1):
 				# stitch these together with E2 and W2
 				current = self.maze.get_tile(x_min + i, y)
@@ -354,7 +355,6 @@ class Robot_v2(object):
 			y_min = self.location[1] - norm_sensors[2]
 			y_max = self.location[1] + norm_sensors[0]
 			x = self.location[0]
-			print("Processing vert: " + str(y_min) + " to " + str(y_max))
 
 			for i in xrange(y_max - y_min - 1):
 				# stitch these together with N2 and S2
@@ -437,11 +437,12 @@ class Robot_v2(object):
 			parent = P[current][1]
 		"""
 		
-		self.move_num = 0	
+		# to remove the None
+		path_tile_NE.pop()
 		path_tile_NE.reverse()
-
+		
 		self.on_second_run = True
-		print(path_tile_NE)
+		self.dijkstra_path = path_tile_NE
 	
 	# Shortest path algo using dijkstra on second run. 
 	def get_shortest_path_tree(self):
@@ -529,6 +530,7 @@ class Robot_v2(object):
 	def update_heading(self, rotation):
 		if(rotation == 'Reset'):
 			self.heading = "N"
+			self.heading_index = 0
 			return 
 		
 		self.heading_index += (rotation / 90)
@@ -556,7 +558,14 @@ class Robot_v2(object):
 		
 		if(self.on_second_run):
 			# Do the calculation for the second run move logic here. 	
-			pass	
+			action = self.dijkstra_path.pop(0)
+			# now turn it into the action
+			rotation, movement = self.algo.key_to_action_tuple(action, self.heading)
+
+			self.update_heading(rotation)
+			# Don't care much about updating the location - should be perfect
+	
+			return rotation, movement
 		
 		# The robot is responsible for cleaning the data it
 		# gets before passing it to viewers and algos. 
@@ -578,9 +587,11 @@ class Robot_v2(object):
 			"coverage_score": coverage_score,
 			"normalized_sensors": view_sensors
 		}
-
-		self.view.pre_algo_view(**info_to_view)
-
+	
+		"""	
+		if(SETTINGS_VISUAL_ON):
+			self.view.pre_algo_view(**info_to_view)
+		"""
 		# pass the graph, heading and location. 
 		# Extendible. 
 		info_to_algo = {

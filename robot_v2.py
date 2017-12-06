@@ -30,6 +30,10 @@ class MazeTile(object):
 	# for algos
 	def __hash__(self):
 		return self.maze_dim * self.x + self.y
+	
+	def __repr__(self):
+		ret_val = "(" + str(self.x)	+ ", " + str(self.y) + ")"
+		return ret_val
 
 	# Currently running in adjacent mode
 	def add_connection(self, direction, tile_ref):

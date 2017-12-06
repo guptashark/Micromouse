@@ -162,6 +162,7 @@ class Robot_v2(object):
 	def __init__(self, maze_dim):
 		
 		self.move_num = 1
+		self.on_second_run = False
 
 		self.location = [0, 0]
 
@@ -385,11 +386,65 @@ class Robot_v2(object):
 
 	# Should do all the reset stuff that we need to... 
 	def begin_performance_run(self):
-		P = self.get_shortest_path()
-		print(P)
+		P = self.get_shortest_path_tree()
+
+		# the 4 center squares
+		# There could be multiple paths to the center, 
+		# some marginally smaller than others. 
+		c = self.maze_dim / 2
+		center_tile_NE = self.maze.get_tile(c, c)
+		center_tile_SE = self.maze.get_tile(c, c - 1)
+		center_tile_NW = self.maze.get_tile(c-1, c)
+		center_tile_SW = self.maze.get_tile(c-1, c-1)
+
+		# The directions for each tile. 
+		path_tile_NE = []
+		path_tile_SE = []
+		path_tile_NW = []
+		path_tile_SW = []
+		
+		current = center_tile_NE
+		parent = P[center_tile_NE][1]
+		path_tile_NE.append(P[center_tile_NE][2])
+		while(parent is not None):
+			current = parent
+			path_tile_NE.append(P[current][2])
+			parent = P[current][1]
+# FOR NOW WORK WITH JUST ONE PATH
+		"""
+		current = center_tile_SE
+		parent = P[center_tile_SE][1]
+		path_tile_SE.append(P[center_tile_SE][2])
+		while(parent is not None):
+			current = parent
+			path_tile_SE.append(P[current][2])
+			parent = P[current][1]
+
+		current = center_tile_NW
+		parent = P[center_tile_NW][1]
+		path_tile_NW.append(P[center_tile_NW][2])
+		while(parent is not None):
+			current = parent
+			path_tile_NW.append(P[current][2])
+			parent = P[current][1]
+
+		current = center_tile_SW
+		parent = P[center_tile_SW][1]
+		path_tile_SW.append(P[center_tile_SW][2])
+		while(parent is not None):
+			current = parent
+			path_tile_SW.append(P[current][2])
+			parent = P[current][1]
+		"""
+		
+		self.move_num = 0	
+		path_tile_NE.reverse()
+
+		self.on_second_run = True
+		print(path_tile_NE)
 	
 	# Shortest path algo using dijkstra on second run. 
-	def get_shortest_path(self):
+	def get_shortest_path_tree(self):
 
 		start_tile = self.maze.get_tile(0, 0)
 
@@ -428,6 +483,7 @@ class Robot_v2(object):
 			for tile in Q:
 				dist = P[tile][0]
 				if(dist < min_so_far):
+					min_so_far = dist
 					min_tile = tile
 
 			u = min_tile
@@ -497,6 +553,11 @@ class Robot_v2(object):
 			raise ValueError("Update Location has a bad heading")
 
 	def next_move(self, sensors):
+		
+		if(self.on_second_run):
+			# Do the calculation for the second run move logic here. 	
+			pass	
+		
 		# The robot is responsible for cleaning the data it
 		# gets before passing it to viewers and algos. 
 		# The robot *is* the driver to the real world. 

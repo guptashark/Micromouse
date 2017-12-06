@@ -436,58 +436,44 @@ class Robot_v2(object):
 		# the 4 center squares
 		# There could be multiple paths to the center, 
 		# some marginally smaller than others. 
+	
 		c = self.maze_dim / 2
-		center_tile_NE = self.maze.get_tile(c, c)
-		center_tile_SE = self.maze.get_tile(c, c - 1)
-		center_tile_NW = self.maze.get_tile(c-1, c)
-		center_tile_SW = self.maze.get_tile(c-1, c-1)
+	
+		goal_tiles = []
+		goal_tiles.append(self.maze.get_tile(c, c))
+		goal_tiles.append(self.maze.get_tile(c, c-1))
+		goal_tiles.append(self.maze.get_tile(c-1, c))
+		goal_tiles.append(self.maze.get_tile(c-1, c-1))
 
-		# The directions for each tile. 
-		path_tile_NE = []
-		path_tile_SE = []
-		path_tile_NW = []
-		path_tile_SW = []
-		
-		current = center_tile_NE
-		parent = P[center_tile_NE][1]
-		path_tile_NE.append(P[center_tile_NE][2])
-		while(parent is not None):
-			current = parent
-			path_tile_NE.append(P[current][2])
-			parent = P[current][1]
-# FOR NOW WORK WITH JUST ONE PATH
-		"""
-		current = center_tile_SE
-		parent = P[center_tile_SE][1]
-		path_tile_SE.append(P[center_tile_SE][2])
-		while(parent is not None):
-			current = parent
-			path_tile_SE.append(P[current][2])
-			parent = P[current][1]
+		# list of 4 lists
+		goal_directions = [[], [], [], []]
 
-		current = center_tile_NW
-		parent = P[center_tile_NW][1]
-		path_tile_NW.append(P[center_tile_NW][2])
-		while(parent is not None):
-			current = parent
-			path_tile_NW.append(P[current][2])
+		for i in xrange(4):
+			current = goal_tiles[i]
 			parent = P[current][1]
+			goal_directions[i].append(P[current][2])
 
-		current = center_tile_SW
-		parent = P[center_tile_SW][1]
-		path_tile_SW.append(P[center_tile_SW][2])
-		while(parent is not None):
-			current = parent
-			path_tile_SW.append(P[current][2])
-			parent = P[current][1]
-		"""
-		
-		# to remove the None
-		path_tile_NE.pop()
-		path_tile_NE.reverse()
-		
+			while(parent is not None):
+				current = parent
+				goal_directions[i].append(P[current][2])
+				parent = P[current][1]
+
+		# Now get the path with the shortest len... 
+		# we could run a fun list sort, but this is 
+		# honestly easier
+		min_dist = 2000
+		shortest_index = None
+		for i in xrange(4):
+			if(len(goal_directions[i]) < min_dist):
+				min_dist = len(goal_directions[i])
+				shortest_index = i
+
+		shortest_path = goal_directions[shortest_index]
+		shortest_path.pop()
+		shortest_path.reverse()
+
 		self.on_second_run = True
-		self.dijkstra_path = path_tile_NE
+		self.dijkstra_path = shortest_path
 	
 	# Shortest path algo using dijkstra on second run. 
 	def get_shortest_path_tree(self):

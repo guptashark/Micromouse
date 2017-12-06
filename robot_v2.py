@@ -382,6 +382,8 @@ class Robot_v2(object):
 	# Should do all the reset stuff that we need to... 
 	def begin_performance_run(self):
 		print("STARTING RUN 2")
+		P = self.get_shortest_path()
+		print(P)
 	
 	# Shortest path algo using dijkstra on second run. 
 	def get_shortest_path(self):
@@ -396,24 +398,29 @@ class Robot_v2(object):
 		# value: [distance, prev_tile, edge]
 		P = {}
 		
-		D = deque(start_tile)
-		
+		D = deque()
+		D.append(start_tile)
+	
+		print("Checkpoint 1")	
 		# Construct the set Q. 
-		while(not D.empty()): 
+		while (len(D) > 0): 
 			current = D.popleft()
 			connections = current.get_connections()
+			#print(connections)
 			for action in connections:
 				destination = connections[action]
 				if(destination is not None):
-					D.append(destination)
+					if(destination not in Q):
+						D.append(destination)
 
-			Q.append(current)
+			Q.add(current)
 			P[current] = [2000, None, None]
 
 		P[start_tile] = [0, None, None]
 
+		print("Checkpoint 2")
 		# Run Dijkstras on Q
-		while(not Q.empty()):
+		while(len(Q) > 0):
 			min_so_far = 2000
 			min_tile = None
 
@@ -435,8 +442,8 @@ class Robot_v2(object):
 					alt = u_dist + 1
 					if (alt < P[u_destination][0]):
 						P[u_destination] = [alt, u, action]
-
-			return P
+		print("Checkpoint 3")
+		return P
 	
 	# Essentially a helper to properly update the 
 	# maze. 

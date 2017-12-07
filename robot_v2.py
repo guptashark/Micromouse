@@ -141,6 +141,7 @@ class MazeAlgorithm(object):
 			for action in connections:
 				destination = connections[action]
 				if(destination not in Q):
+					Q.add(destination)
 					D.append(destination)
 
 			Q.add(current)
@@ -163,7 +164,7 @@ class MazeAlgorithm(object):
 			u_dist = P[u][0]
 
 			Q.remove(u)
-			u_connections = u.get_connections()
+			u_connections = u.get_tile_links()
 
 			for action in u_connections:
 				
@@ -363,7 +364,7 @@ class Robot_v2(object):
 		self.maze = MazeGraph(maze_dim)
 		# Set the algorithm that will be used,
 		# and give it a ref to the maze. 
-		self.algo = BFSWalk(maze_dim, self.maze)
+		self.algo =GreedyWalk(maze_dim, self.maze)
 		self.view = MazeView(maze_dim)
 		
 		# Give the tiles class a ref to the maze
@@ -634,18 +635,26 @@ class Robot_v2(object):
 		
 		D = deque()
 		D.append(start_tile)
-	
+		
+		#print("Creating Q...")	
 		# Construct the set Q. 
 		while (len(D) > 0): 
+			
 			current = D.popleft()
+		#	print("In loop..")
+		#	print(current)
 			connections = current.get_tile_links()
+			# ... there aren't that many connections... 
+		#	print(connections)
 			for action in connections:
 				destination = connections[action]
 				if(destination not in Q):
+					Q.add(destination)
 					D.append(destination)
 
-			Q.add(current)
 			P[current] = [2000, None, None]
+		#print("Done creating Q...")
+		
 
 		P[start_tile] = [0, None, None]
 
@@ -664,7 +673,7 @@ class Robot_v2(object):
 			u_dist = P[u][0]
 
 			Q.remove(u)
-			u_connections = u.get_connections()
+			u_connections = u.get_tile_links()
 
 			for action in u_connections:
 				

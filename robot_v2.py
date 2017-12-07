@@ -120,6 +120,62 @@ class MazeGraph(object):
 
 class MazeAlgorithm(object):
 
+	def generate_shortest_path_tree(self, source):
+		start_tile = self.maze.get_tile(source[0], source[1])
+
+		# set of nodes. 
+		Q = set()
+
+		# dict where: 
+		# key: MazeTile 
+		# value: [distance, prev_tile, edge]
+		P = {}
+		
+		D = deque()
+		D.append(start_tile)
+	
+		# Construct the set Q. 
+		while (len(D) > 0): 
+			current = D.popleft()
+			connections = current.get_tile_links()
+			for action in connections:
+				destination = connections[action]
+				if(destination not in Q):
+					D.append(destination)
+
+			Q.add(current)
+			P[current] = [2000, None, None]
+
+		P[start_tile] = [0, None, None]
+
+		# Run Dijkstras on Q
+		while(len(Q) > 0):
+			min_so_far = 2000
+			min_tile = None
+
+			for tile in Q:
+				dist = P[tile][0]
+				if(dist < min_so_far):
+					min_so_far = dist
+					min_tile = tile
+
+			u = min_tile
+			u_dist = P[u][0]
+
+			Q.remove(u)
+			u_connections = u.get_connections()
+
+			for action in u_connections:
+				
+				u_destination = u_connections[action]
+				if(u_destination is not None):
+					alt = u_dist + 1
+					if (alt < P[u_destination][0]):
+						P[u_destination] = [alt, u, action]
+		return P
+	
+
+
 	def key_to_action_tuple(self, move_key, heading):
 		if(move_key == "Reset"):
 			return 'Reset', 'Reset'
@@ -178,35 +234,166 @@ class GreedyWalk(MazeAlgorithm):
 		self.maze_dim = maze_dim
 		self.maze = maze
 
-	def reached_goal(self, x, y):
-		c = self.maze_dim / 2
-		x_in_range = ((c - 1 <= x) and (x <= c))
-		y_in_range = ((c - 1 <= y) and (y <= c))
-
-		return (x_in_range and y_in_range)
-
 	def next_move(self, **kwargs):
 		
 		location = kwargs["location"]
 		heading = kwargs["heading"]
 		x = location[0]
 		y = location[1]
+		
+		current = self.maze.get_tile(x, y)
 
-		if(self.reached_goal(x, y)): 
+		paths = self.generate_shortest_path_tree(location)
+
+		# Now search the tree for the closest node that
+		# is not fully discovered... 
+		min_dist = 2000
+		waypoint = None
+		for tile in paths:
+			if (tile.get_coverage_index() < 12):
+				if(paths[tile][0] < min_dist):
+					min_dist = paths[tile][0]
+					waypoint = tile
+
+		# if waypoint is None, then we're done, we literally
+		# have to be. All the tiles have full coverage
+		if(waypoint == None):
 			return 'Reset', 'Reset'
 
-		current_tile = self.maze.get_tile(x, y)
-		
-		links = current_tile.get_tile_links()
-		for key in links:
-			destination = links[key]
-			if (destination.get_coverage_index() < 12):
-				return self.key_to_action_tuple(key, heading)
+		# otherwise... generate the path to it. 
+	
+		# special case - distance is just 1
 
-		#janky, fix this
-		for key in links:
-			destination = links[key]
-			return self.key_to_action_tuple(key, heading)
+		directions = []	
+		parent = paths[waypoint][1]
+		directions.append(paths[waypoint][2])
+	
+		while(parent is not None):
+			current = parent
+			directions.append(paths[current][2])
+			parent = paths[current][1]
+
+		# Lets see what we're getting... 
+		directions.pop()
+		ret_action = directions[len(directions) - 1]
+
+		return self.key_to_action_tuple(ret_action, heading)
+
+
+
+
+# Search for the closest tile that is not fully 
+# discovered using Breadth First Search 
+class BFSWalk(MazeAlgorithm):
+	def __init__(self, maze_dim, maze):
+		self.maze_dim = maze_dim
+		self.maze = maze
+
+	def special_BFS(self, source):
+		
+		# the dict
+		# key = tile_ref
+		# value = [parent, edge/action]
+		P = {}
+	
+		P[source] = [None, None]	
+		
+		deck = deque()
+		deck.append(source)
+
+		while(len(deck) > 0):
+			current = deck.popleft()
+			links = current.get_tile_links()
+			for action in links:
+				destination = links[action]
+
+				# STOP IF THIS IS THE CASE. 
+				# Generate the directions from here. 
+				if(destination.get_coverage_index() < 12):
+					P[destination] = [current, action]
+					return P, destination
+				else:
+					if(destination not in P):
+						deck.append(destination)
+						P[destination] = [current, action]
+
+		# IF we're all the way here, we never found 
+		# a tile that had less than 12 coverage. Return None. 
+		return None, None
+
+	# little helper to make sure we reached the goal
+	def next_move(self, **kwargs):
+		
+		location = kwargs["location"]
+		heading = kwargs["heading"]
+		x = location[0]
+		y = location[1]
+		
+		current = self.maze.get_tile(x, y)
+
+
+		# Completely novel way of doing the same thing... 
+		paths, destination = self.special_BFS(current)
+		if(paths == None): 
+			return 'Reset', 'Reset'
+		# now generate the path...
+		
+		directions = []	
+		parent = paths[destination][0]
+		directions.append(paths[destination][1])
+	
+		while(parent is not None):
+			current = parent
+			directions.append(paths[current][1])
+			parent = paths[current][0]
+
+		directions.pop()
+		ret_action = directions[len(directions) - 1]
+		return self.key_to_action_tuple(ret_action, heading)
+
+
+		"""
+		paths = self.generate_shortest_path_tree(location)
+
+		# Now search the tree for the closest node that
+		# is not fully discovered... 
+		min_dist = 2000
+		waypoint = None
+		for tile in paths:
+			if (tile.get_coverage_index() < 12):
+				if(paths[tile][0] < min_dist):
+					min_dist = paths[tile][0]
+					waypoint = tile
+
+		# if waypoint is None, then we're done, we literally
+		# have to be. All the tiles have full coverage
+		if(waypoint == None):
+			return 'Reset', 'Reset'
+
+		# otherwise... generate the path to it. 
+	
+		# special case - distance is just 1
+
+		directions = []	
+		parent = paths[waypoint][1]
+		directions.append(paths[waypoint][2])
+	
+		while(parent is not None):
+			current = parent
+			directions.append(paths[current][2])
+			parent = paths[current][1]
+
+		# Lets see what we're getting... 
+		directions.pop()
+		ret_action = directions[len(directions) - 1]
+
+		return self.key_to_action_tuple(ret_action, heading)
+		"""
+
+
+
+
+
 
 class Robot_v2(object):
 	def __init__(self, maze_dim):
@@ -465,7 +652,6 @@ class Robot_v2(object):
 					goal_directions[i].append(P[current][2])
 					parent = P[current][1]
 
-
 		# Now get the path with the shortest len... 
 		# we could run a fun list sort, but this is 
 		# honestly easier
@@ -616,6 +802,7 @@ class Robot_v2(object):
 		self.update_graph(logic_sensors)
 
 		coverage_score = self.maze.get_coverage_score()
+		#print(coverage_score)
 		# Pass the data necessary to render
 		# info on the maze before the algo runs. 
 		# (To see what the input to the algo is)

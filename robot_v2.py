@@ -327,7 +327,6 @@ class BFSWalk(MazeAlgorithm):
 		# Completely novel way of doing the same thing... 
 		paths, destination = self.special_BFS(current)
 		if(paths == None): 
-			print("Sending reset...")
 			return 'Reset', 'Reset'
 		# now generate the path...
 		
@@ -636,16 +635,12 @@ class Robot_v2(object):
 		D = deque()
 		D.append(start_tile)
 		
-		#print("Creating Q...")	
 		# Construct the set Q. 
 		while (len(D) > 0): 
 			
 			current = D.popleft()
-		#	print("In loop..")
-		#	print(current)
 			connections = current.get_tile_links()
 			# ... there aren't that many connections... 
-		#	print(connections)
 			for action in connections:
 				destination = connections[action]
 				if(destination not in Q):
@@ -653,7 +648,6 @@ class Robot_v2(object):
 					D.append(destination)
 
 			P[current] = [2000, None, None]
-		#print("Done creating Q...")
 		
 
 		P[start_tile] = [0, None, None]
@@ -760,6 +754,7 @@ class Robot_v2(object):
 
 		coverage_score = self.maze.get_coverage_score()
 		#print(coverage_score)
+
 		# Pass the data necessary to render
 		# info on the maze before the algo runs. 
 		# (To see what the input to the algo is)
@@ -773,6 +768,7 @@ class Robot_v2(object):
 
 		# This is toggled by the robot itself, 
 		# when we create its config file. 
+		# (If there is one)
 		# The maze view needs to be updated anyways	
 		# self.view.pre_algo_view(**info_to_view)
 

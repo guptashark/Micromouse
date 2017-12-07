@@ -260,10 +260,6 @@ class GreedyWalk(MazeAlgorithm):
 		if(waypoint == None):
 			return 'Reset', 'Reset'
 
-		# otherwise... generate the path to it. 
-	
-		# special case - distance is just 1
-
 		directions = []	
 		parent = paths[waypoint][1]
 		directions.append(paths[waypoint][2])
@@ -278,9 +274,6 @@ class GreedyWalk(MazeAlgorithm):
 		ret_action = directions[len(directions) - 1]
 
 		return self.key_to_action_tuple(ret_action, heading)
-
-
-
 
 # Search for the closest tile that is not fully 
 # discovered using Breadth First Search 
@@ -330,11 +323,10 @@ class BFSWalk(MazeAlgorithm):
 		y = location[1]
 		
 		current = self.maze.get_tile(x, y)
-
-
 		# Completely novel way of doing the same thing... 
 		paths, destination = self.special_BFS(current)
 		if(paths == None): 
+			print("Sending reset...")
 			return 'Reset', 'Reset'
 		# now generate the path...
 		
@@ -350,50 +342,6 @@ class BFSWalk(MazeAlgorithm):
 		directions.pop()
 		ret_action = directions[len(directions) - 1]
 		return self.key_to_action_tuple(ret_action, heading)
-
-
-		"""
-		paths = self.generate_shortest_path_tree(location)
-
-		# Now search the tree for the closest node that
-		# is not fully discovered... 
-		min_dist = 2000
-		waypoint = None
-		for tile in paths:
-			if (tile.get_coverage_index() < 12):
-				if(paths[tile][0] < min_dist):
-					min_dist = paths[tile][0]
-					waypoint = tile
-
-		# if waypoint is None, then we're done, we literally
-		# have to be. All the tiles have full coverage
-		if(waypoint == None):
-			return 'Reset', 'Reset'
-
-		# otherwise... generate the path to it. 
-	
-		# special case - distance is just 1
-
-		directions = []	
-		parent = paths[waypoint][1]
-		directions.append(paths[waypoint][2])
-	
-		while(parent is not None):
-			current = parent
-			directions.append(paths[current][2])
-			parent = paths[current][1]
-
-		# Lets see what we're getting... 
-		directions.pop()
-		ret_action = directions[len(directions) - 1]
-
-		return self.key_to_action_tuple(ret_action, heading)
-		"""
-
-
-
-
-
 
 class Robot_v2(object):
 	def __init__(self, maze_dim):
@@ -415,7 +363,7 @@ class Robot_v2(object):
 		self.maze = MazeGraph(maze_dim)
 		# Set the algorithm that will be used,
 		# and give it a ref to the maze. 
-		self.algo = GreedyWalk(maze_dim, self.maze)
+		self.algo = BFSWalk(maze_dim, self.maze)
 		self.view = MazeView(maze_dim)
 		
 		# Give the tiles class a ref to the maze

@@ -1,7 +1,6 @@
 from mazeview import MazeView
 from collections import deque
 
-
 class MazeTile(object):
 	
 	# a shared ref to maze
@@ -21,6 +20,12 @@ class MazeTile(object):
 		# where action can be made by robot
 		# and reaches a tile. 
 		self.tile_links = {}
+
+		# Tile links for only lnks where
+		# the action movement is "1" and 
+		# the action reaches a tile. 
+		self.adjacent_links = {}
+
 		self.algo_data = {}
 	
 		# The number of entries inconnections known where
@@ -54,6 +59,10 @@ class MazeTile(object):
 		if(current_val == None):
 			self.connections[direction] = tile_ref
 			self.tile_links[direction] = tile_ref
+			
+			if(direction[1] == "1"):
+				self.adjacent_links[direction] = tile_ref
+
 			self.coverage_index += 1
 			MazeTile.maze_ref.increment_coverage()
 		else:
@@ -83,6 +92,9 @@ class MazeTile(object):
 
 	def get_tile_links(self):
 		return self.tile_links
+
+	def get_adjacent_links(self):
+		return self.adjacent_links
 
 class MazeGraph(object):
 	def __init__(self, maze_dim):
@@ -174,8 +186,6 @@ class MazeAlgorithm(object):
 					if (alt < P[u_destination][0]):
 						P[u_destination] = [alt, u, action]
 		return P
-	
-
 
 	def key_to_action_tuple(self, move_key, heading):
 		if(move_key == "Reset"):
@@ -230,6 +240,7 @@ class ManualControl(MazeAlgorithm):
 		ret_val = self.key_to_action_tuple(action, heading)
 		return ret_val
 
+# Uses djikstra to decide where to walk to
 class GreedyWalk(MazeAlgorithm):
 	def __init__(self, maze_dim, maze):
 		self.maze_dim = maze_dim
@@ -343,6 +354,274 @@ class BFSWalk(MazeAlgorithm):
 		ret_action = directions[len(directions) - 1]
 		return self.key_to_action_tuple(ret_action, heading)
 
+# This class is a complete duplicate of 
+# the "Center Hunter" except that it only
+# ever makes immediate actions. The Tile 
+# objects were slightly modified to support
+# this backwards compatible behavior. 
+
+# The two classes SingleStepCenterHunter and 
+# CenterHunter are kept separate without 
+# common parameters because legacy, and 
+# ease of simplicity. These aren't here
+# to do any actual work, except show
+# what the first iteratiosn of our 
+# algos were. 
+class SingleStepCenterHunter(MazeAlgorithm):
+	def __init__(self, maze_dim, maze):
+		self.maze_dim = maze_dim
+		self.maze = maze
+
+		c = maze_dim / 2
+
+		get_dist = (lambda tile_1, tile_2: 
+		((tile_1.x - tile_2.x) ** 2 + (tile_1.y - tile_2.y) **2))
+		# now we store the distance of each tile 
+		# from the center in its data dict. 
+		# sqr_dist is the square of the euclidean distance. 
+		
+		# all the tiles in the lower left 
+		# quadrant will be closest to the tile at: 
+		# (c-1, c-1)
+		center = maze.get_tile(c-1, c-1)
+		for x in xrange(c):
+			for y in xrange(c):
+				current = maze.get_tile(x, y)
+				current.algo_data["dist"] = get_dist(current, center)
+
+		# all the tiles in the upper left 
+		# quadrant will be closest to.. 
+		# (c-1, c)
+		center = maze.get_tile(c-1, c)
+		for x in xrange(c):
+			for y in xrange(c, maze_dim):
+				current = maze.get_tile(x, y)
+				current.algo_data["dist"] = get_dist(current, center)
+
+		# upper right quadrant... 
+		# (c, c)
+		center = maze.get_tile(c, c)
+		for x in xrange(c, maze_dim):
+			for y in xrange(c, maze_dim):
+				current = maze.get_tile(x, y)
+				current.algo_data["dist"] = get_dist(current, center)
+
+		# Lower right quadrant
+		# (c, c-1)
+		center = maze.get_tile(c, c-1)
+		for x in xrange(c, maze_dim):
+			for y in xrange(c):
+				current = maze.get_tile(x, y)
+				current.algo_data["dist"] = get_dist(current, center)
+
+	# This is special for Center Hunter. 
+	def special_BFS(self, source):
+		
+		# the dict
+		# key = tile_ref
+		# value = [parent, edge/action]
+		P = {}
+	
+		P[source] = [None, None]	
+		
+		deck = deque()
+		deck.append(source)
+	
+		# Every tile has a better priority than 256, 
+		# also, the lower the priority, the more 
+		# attractive the tile is. 
+		best_priority = 256
+		best_tile = None
+
+
+		while(len(deck) > 0):
+			current = deck.popleft()
+			links = current.get_adjacent_links()
+			for action in links:
+				destination = links[action]
+
+				if(destination not in P):
+					deck.append(destination)
+					P[destination] = [current, action]
+
+					if(destination.get_coverage_index() < 12):
+					# This way, we only consider tiles that 
+					# are close to the center and not fully
+					# explored. 
+						if(destination.algo_data["dist"] < best_priority):
+							best_priority = destination.algo_data["dist"]
+							best_tile = destination
+				# else, not much to do, skip processing. 
+
+		# we've processed the entire graph, now we get the best tile. 
+		if(best_tile == None): 
+			# this means the graph is fully explored... 
+			return None, None
+		else:
+			return P, best_tile
+
+	def next_move(self, **kwargs):
+		
+		location = kwargs["location"]
+		heading = kwargs["heading"]
+		x = location[0]
+		y = location[1]
+
+		# search for a square that is
+		# closest to the center that we
+		# can get to. 
+		current = self.maze.get_tile(x, y)
+		paths, destination = self.special_BFS(current)
+	
+		# all done exploring	
+		if(paths == None):
+			return 'Reset', 'Reset'
+		
+		# find the directions... 
+		# (Seriously heavy copypasta from the actual 
+		# BFS algo)
+		directions = []	
+		parent = paths[destination][0]
+		directions.append(paths[destination][1])
+	
+		while(parent is not None):
+			current = parent
+			directions.append(paths[current][1])
+			parent = paths[current][0]
+
+		directions.pop()
+		ret_action = directions[len(directions) - 1]
+		return self.key_to_action_tuple(ret_action, heading)
+
+
+
+class CenterHunter(MazeAlgorithm):
+	
+	def __init__(self, maze_dim, maze):
+		self.maze_dim = maze_dim
+		self.maze = maze
+
+		c = maze_dim / 2
+
+		get_dist = (lambda tile_1, tile_2: 
+		((tile_1.x - tile_2.x) ** 2 + (tile_1.y - tile_2.y) **2))
+		# now we store the distance of each tile 
+		# from the center in its data dict. 
+		# sqr_dist is the square of the euclidean distance. 
+		
+		# all the tiles in the lower left 
+		# quadrant will be closest to the tile at: 
+		# (c-1, c-1)
+		center = maze.get_tile(c-1, c-1)
+		for x in xrange(c):
+			for y in xrange(c):
+				current = maze.get_tile(x, y)
+				current.algo_data["dist"] = get_dist(current, center)
+
+		# all the tiles in the upper left 
+		# quadrant will be closest to.. 
+		# (c-1, c)
+		center = maze.get_tile(c-1, c)
+		for x in xrange(c):
+			for y in xrange(c, maze_dim):
+				current = maze.get_tile(x, y)
+				current.algo_data["dist"] = get_dist(current, center)
+
+		# upper right quadrant... 
+		# (c, c)
+		center = maze.get_tile(c, c)
+		for x in xrange(c, maze_dim):
+			for y in xrange(c, maze_dim):
+				current = maze.get_tile(x, y)
+				current.algo_data["dist"] = get_dist(current, center)
+
+		# Lower right quadrant
+		# (c, c-1)
+		center = maze.get_tile(c, c-1)
+		for x in xrange(c, maze_dim):
+			for y in xrange(c):
+				current = maze.get_tile(x, y)
+				current.algo_data["dist"] = get_dist(current, center)
+
+	# This is special for Center Hunter. 
+	def special_BFS(self, source):
+		
+		# the dict
+		# key = tile_ref
+		# value = [parent, edge/action]
+		P = {}
+	
+		P[source] = [None, None]	
+		
+		deck = deque()
+		deck.append(source)
+	
+		# Every tile has a better priority than 256, 
+		# also, the lower the priority, the more 
+		# attractive the tile is. 
+		best_priority = 256
+		best_tile = None
+
+
+		while(len(deck) > 0):
+			current = deck.popleft()
+			links = current.get_tile_links()
+			for action in links:
+				destination = links[action]
+
+				if(destination not in P):
+					deck.append(destination)
+					P[destination] = [current, action]
+
+					if(destination.get_coverage_index() < 12):
+					# This way, we only consider tiles that 
+					# are close to the center and not fully
+					# explored. 
+						if(destination.algo_data["dist"] < best_priority):
+							best_priority = destination.algo_data["dist"]
+							best_tile = destination
+				# else, not much to do, skip processing. 
+
+		# we've processed the entire graph, now we get the best tile. 
+		if(best_tile == None): 
+			# this means the graph is fully explored... 
+			return None, None
+		else:
+			return P, best_tile
+
+	def next_move(self, **kwargs):
+		
+		location = kwargs["location"]
+		heading = kwargs["heading"]
+		x = location[0]
+		y = location[1]
+
+		# search for a square that is
+		# closest to the center that we
+		# can get to. 
+		current = self.maze.get_tile(x, y)
+		paths, destination = self.special_BFS(current)
+	
+		# all done exploring	
+		if(paths == None):
+			return 'Reset', 'Reset'
+		
+		# find the directions... 
+		# (Seriously heavy copypasta from the actual 
+		# BFS algo)
+		directions = []	
+		parent = paths[destination][0]
+		directions.append(paths[destination][1])
+	
+		while(parent is not None):
+			current = parent
+			directions.append(paths[current][1])
+			parent = paths[current][0]
+
+		directions.pop()
+		ret_action = directions[len(directions) - 1]
+		return self.key_to_action_tuple(ret_action, heading)
+
 class Robot(object):
 	def __init__(self, maze_dim):
 		
@@ -363,7 +642,7 @@ class Robot(object):
 		self.maze = MazeGraph(maze_dim)
 		# Set the algorithm that will be used,
 		# and give it a ref to the maze. 
-		self.algo =BFSWalk(maze_dim, self.maze)
+		self.algo = CenterHunter(maze_dim, self.maze)
 		self.view = MazeView(maze_dim)
 		
 		# Give the tiles class a ref to the maze

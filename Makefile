@@ -1,8 +1,7 @@
 tester: 
-	python2 tester_v2.py test_maze_01.txt 
-	python2 tester_v2.py test_maze_02.txt 
-	python2 tester_v2.py test_maze_03.txt
-	python2 tester_v2.py test_maze_04.txt
+	python2 tester.py test_maze_01.txt 
+	python2 tester.py test_maze_02.txt 
+	python2 tester.py test_maze_03.txt
 
 
 

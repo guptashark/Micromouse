@@ -1,5 +1,5 @@
 from maze import Maze
-from robot_v2 import Robot_v2
+from robot import Robot
 import sys
 
 # global dictionaries for robot movement and sensing
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     testmaze = Maze( str(sys.argv[1]) )
 
     # Intitialize a robot; robot receives info about maze dimensions.
-    testrobot = Robot_v2(testmaze.dim)
+    testrobot = Robot(testmaze.dim)
 
     # Record robot performance over two runs.
     runtimes = []

@@ -642,7 +642,7 @@ class Robot(object):
 		self.maze = MazeGraph(maze_dim)
 		# Set the algorithm that will be used,
 		# and give it a ref to the maze. 
-		self.algo = CenterHunter(maze_dim, self.maze)
+		self.algo = GreedyWalk(maze_dim, self.maze)
 		self.view = MazeView(maze_dim)
 		
 		# Give the tiles class a ref to the maze

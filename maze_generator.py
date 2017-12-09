@@ -1,5 +1,5 @@
 import random
-random.seed(0)
+random.seed(14)
 # current issues - 
 
 """
@@ -51,7 +51,7 @@ which means for a 12x12 there will be
 
 # The probability of there being a wall at a 
 # particular location. 
-wall_probability = 0.3
+wall_probability = 0.50
 
 def wall_gen():
 	val = random.random()
@@ -91,6 +91,31 @@ horiz_walls[(6,6)] = 0
 vert_walls[(6, 5)] = 0
 vert_walls[(6,6)] = 0
 
+# here, we'll add in several walls to make
+# the box of the maze, to maze getting into
+# the goal room harder. 
+# The coordinates start at the top rhgt horiz
+# wall, and walk their way around clockwise. 
+# uncomment the wall that you want / set to 0
+horiz_walls[(6,7)] = 1
+vert_walls[(7,6)] = 1
+vert_walls[(7,5)] = 1
+horiz_walls[(6,5)] = 1
+horiz_walls[(5,5)] = 1
+vert_walls[(5,5)] = 1
+vert_walls[(5,6)] = 1
+horiz_walls[(5,7)] = 0
+
+# here, we can fix one or two walls
+# that are troublesome and getting in 
+# the way of connecting two areas
+vert_walls[(2, 2)] = 0
+vert_walls[(7, 1)] = 0
+vert_walls[(9, 4)] = 0
+
+
+
+# of the maze. Different for every maze. 
 # set all the walls on the top and bottom
 for x in xrange(12):
 	horiz_walls[(x, 0)] = 1
@@ -101,28 +126,20 @@ for x in xrange(12):
 tile_vals = {}
 for x in xrange(12):
 	for y in xrange(12):
-
 		# north horiz
 		nh = 1 - horiz_walls[(x, y + 1)]
-
 		# south horiz
 		sh = 1 - horiz_walls[(x, y)]
-
 		# east vert
 		ev = 1 - vert_walls[(x + 1, y)]
-
 		# west vert
 		wv = 1 - vert_walls[(x, y)]	
-
 		val = nh+(ev*2)+(sh*4)+(wv*8)
-
 		tile_vals[(x, y)] = val
 
 # now that the tile vals are made, we can save
 # them to a file. 
-
-# we just need to print them a certain way... 
-maze_output = open("maze_gen_output_01.txt", "w")
+maze_output = open("maze_gen_output_06.txt", "w")
 maze_output.write("12\n")
 
 for i in xrange(12):
@@ -130,8 +147,6 @@ for i in xrange(12):
 		maze_output.write(str(tile_vals[(i, j)]))
 		if(j != 11):
 			maze_output.write(",")
-
 	maze_output.write("\n")
-
 maze_output.close()
 # And we're done... I think

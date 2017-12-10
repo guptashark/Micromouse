@@ -1,5 +1,5 @@
 import random
-random.seed(14)
+random.seed(24)
 # current issues - 
 
 """
@@ -109,13 +109,14 @@ horiz_walls[(5,7)] = 0
 # here, we can fix one or two walls
 # that are troublesome and getting in 
 # the way of connecting two areas
-vert_walls[(2, 2)] = 0
-vert_walls[(7, 1)] = 0
-vert_walls[(9, 4)] = 0
-
-
-
 # of the maze. Different for every maze. 
+
+horiz_walls[(0, 1)] = 0
+vert_walls[(2, 1)] = 0
+vert_walls[(6, 0)] = 0
+vert_walls[(7, 1)] = 0
+vert_walls[(1, 8)] = 0
+
 # set all the walls on the top and bottom
 for x in xrange(12):
 	horiz_walls[(x, 0)] = 1
@@ -139,7 +140,7 @@ for x in xrange(12):
 
 # now that the tile vals are made, we can save
 # them to a file. 
-maze_output = open("maze_gen_output_06.txt", "w")
+maze_output = open("maze_gen_output_10.txt", "w")
 maze_output.write("12\n")
 
 for i in xrange(12):

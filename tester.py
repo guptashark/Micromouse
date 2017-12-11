@@ -32,7 +32,7 @@ if __name__ == '__main__':
     runtimes = []
     total_time = 0
     for run in range(2):
-        print "Starting run {}.".format(run)
+        #print "Starting run {}.".format(run)
 
         # Set the robot in the start position. Note that robot position
         # parameters are independent of the robot itself.

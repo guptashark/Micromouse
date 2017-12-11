@@ -1,0 +1,11 @@
+SingleStepCenterHunter: 29.4
+range: (21.433, 41.133)
+
+CenterHunter: 26.303
+range: (18.567, 39.233)
+
+GreedyWalk: 20.95
+range: (13.133, 30.857)
+
+BFSWalk: 21.187
+range: (13.133, 31.467)
